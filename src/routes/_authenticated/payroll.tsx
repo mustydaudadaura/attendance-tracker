@@ -95,30 +95,39 @@ function Payroll() {
               <tr>
                 <th className="px-4 py-3">Staff</th>
                 <th className="px-4 py-3">Dept</th>
-                <th className="px-4 py-3 text-right">Days present</th>
+                <th className="px-4 py-3 text-right">Present</th>
+                <th className="px-4 py-3 text-right">Absent</th>
                 <th className="px-4 py-3 text-right">Late days</th>
-                <th className="px-4 py-3 text-right">Late minutes</th>
+                <th className="px-4 py-3 text-right">Late min</th>
                 <th className="px-4 py-3 text-right">Base salary</th>
-                <th className="px-4 py-3 text-right">Deductions</th>
+                <th className="px-4 py-3 text-right">Deduction %</th>
+                <th className="px-4 py-3 text-right">Deduction ₦</th>
                 <th className="px-4 py-3 text-right">Net pay</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">No staff registered yet.</td></tr>
+                <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">No staff registered yet.</td></tr>
               )}
               {rows.map((r) => (
                 <tr key={r.id} className="border-t">
                   <td className="px-4 py-3 font-medium">{r.full_name}</td>
                   <td className="px-4 py-3 capitalize text-muted-foreground">{r.department}</td>
                   <td className="px-4 py-3 text-right">{r.daysPresent}</td>
+                  <td className="px-4 py-3 text-right text-destructive">{r.absentDays}</td>
                   <td className="px-4 py-3 text-right">{r.lateDays}</td>
                   <td className="px-4 py-3 text-right">{r.totalLateMinutes}</td>
                   <td className="px-4 py-3 text-right">₦{Number(r.base_salary).toLocaleString()}</td>
                   <td className="px-4 py-3 text-right text-destructive">
-                    {r.totalDeduction > 0 ? `− ₦${r.totalDeduction.toLocaleString()}` : "—"}
+                    {r.totalPct > 0 ? `${r.totalPct}%` : "—"}
+                    {r.absentPct > 0 && (
+                      <div className="text-xs text-muted-foreground">{r.absentPct}% absent + {r.latePct}% late</div>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-success">₦{r.netPay.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right text-destructive">
+                    {r.totalDeduction > 0 ? `− ₦${Math.round(r.totalDeduction).toLocaleString()}` : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-success">₦{Math.round(r.netPay).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
