@@ -147,7 +147,7 @@ function StaffHistoryPage() {
         <Card className="p-4">
           <p className="text-xs uppercase text-muted-foreground">Net pay (range)</p>
           <p className="mt-1 text-2xl font-bold text-success">
-            ₦{netPay.toLocaleString()}
+            ₦{Math.round(netPay).toLocaleString()}
           </p>
         </Card>
       </div>
