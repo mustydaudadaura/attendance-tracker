@@ -167,7 +167,7 @@ function StaffHistoryPage() {
                   paddingAngle={2}
                   label
                 >
-                  <Cell fill="hsl(var(--success))" />
+                  <Cell fill={staffColor} />
                   <Cell fill="hsl(var(--destructive))" />
                 </Pie>
                 <Tooltip />
