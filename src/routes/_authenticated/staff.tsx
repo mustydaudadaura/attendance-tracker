@@ -13,7 +13,7 @@ import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, History } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/staff")({ component: StaffPage });
