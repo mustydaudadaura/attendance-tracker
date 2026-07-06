@@ -1,0 +1,111 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+export const Route = createFileRoute("/_authenticated/payroll")({ component: Payroll });
+
+function currentMonthLagos() {
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit" });
+  return fmt.format(new Date()); // yyyy-mm
+}
+
+function Payroll() {
+  const [month, setMonth] = useState(currentMonthLagos());
+  const [year, m] = month.split("-").map(Number);
+  const start = `${year}-${String(m).padStart(2, "0")}-01`;
+  const endDate = new Date(year, m, 1); // first of next month
+  const end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-01`;
+
+  const { data } = useQuery({
+    queryKey: ["payroll", month],
+    queryFn: async () => {
+      const [staff, att] = await Promise.all([
+        supabase.from("staff").select("id, full_name, department, base_salary, active"),
+        supabase.from("attendance").select("staff_id, work_date, late_minutes, deduction_amount, on_time")
+          .gte("work_date", start).lt("work_date", end),
+      ]);
+      if (staff.error) throw staff.error;
+      if (att.error) throw att.error;
+      return { staff: staff.data, att: att.data };
+    },
+  });
+
+  const rows = (data?.staff ?? []).map((s) => {
+    const mine = (data?.att ?? []).filter((a) => a.staff_id === s.id);
+    const daysPresent = mine.length;
+    const lateDays = mine.filter((a) => !a.on_time).length;
+    const totalLateMinutes = mine.reduce((n, a) => n + (a.late_minutes ?? 0), 0);
+    const totalDeduction = mine.reduce((n, a) => n + Number(a.deduction_amount ?? 0), 0);
+    const netPay = Math.max(0, Number(s.base_salary) - totalDeduction);
+    return { ...s, daysPresent, lateDays, totalLateMinutes, totalDeduction, netPay };
+  });
+
+  const totals = rows.reduce((acc, r) => ({
+    salary: acc.salary + Number(r.base_salary),
+    deduction: acc.deduction + r.totalDeduction,
+    net: acc.net + r.netPay,
+  }), { salary: 0, deduction: 0, net: 0 });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Payroll</h2>
+          <p className="text-sm text-muted-foreground">Base salary minus lateness deductions from attendance records.</p>
+        </div>
+        <div>
+          <Label htmlFor="month">Month</Label>
+          <Input id="month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-48" />
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total salaries</div><div className="mt-2 text-2xl font-bold">₦{totals.salary.toLocaleString()}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total deductions</div><div className="mt-2 text-2xl font-bold text-destructive">₦{totals.deduction.toLocaleString()}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total net pay</div><div className="mt-2 text-2xl font-bold text-success">₦{totals.net.toLocaleString()}</div></Card>
+      </div>
+
+      <Card className="overflow-hidden p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">Staff</th>
+                <th className="px-4 py-3">Dept</th>
+                <th className="px-4 py-3 text-right">Days present</th>
+                <th className="px-4 py-3 text-right">Late days</th>
+                <th className="px-4 py-3 text-right">Late minutes</th>
+                <th className="px-4 py-3 text-right">Base salary</th>
+                <th className="px-4 py-3 text-right">Deductions</th>
+                <th className="px-4 py-3 text-right">Net pay</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 && (
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">No staff registered yet.</td></tr>
+              )}
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t">
+                  <td className="px-4 py-3 font-medium">{r.full_name}</td>
+                  <td className="px-4 py-3 capitalize text-muted-foreground">{r.department}</td>
+                  <td className="px-4 py-3 text-right">{r.daysPresent}</td>
+                  <td className="px-4 py-3 text-right">{r.lateDays}</td>
+                  <td className="px-4 py-3 text-right">{r.totalLateMinutes}</td>
+                  <td className="px-4 py-3 text-right">₦{Number(r.base_salary).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right text-destructive">
+                    {r.totalDeduction > 0 ? `− ₦${r.totalDeduction.toLocaleString()}` : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-success">₦{r.netPay.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
