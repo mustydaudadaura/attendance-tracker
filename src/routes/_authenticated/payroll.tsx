@@ -83,9 +83,9 @@ function Payroll() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total salaries</div><div className="mt-2 text-2xl font-bold">₦{totals.salary.toLocaleString()}</div></Card>
-        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total deductions</div><div className="mt-2 text-2xl font-bold text-destructive">₦{totals.deduction.toLocaleString()}</div></Card>
-        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total net pay</div><div className="mt-2 text-2xl font-bold text-success">₦{totals.net.toLocaleString()}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total salaries</div><div className="mt-2 text-2xl font-bold">₦{Math.round(totals.salary).toLocaleString()}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total deductions</div><div className="mt-2 text-2xl font-bold text-destructive">₦{Math.round(totals.deduction).toLocaleString()}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total net pay</div><div className="mt-2 text-2xl font-bold text-success">₦{Math.round(totals.net).toLocaleString()}</div></Card>
       </div>
 
       <Card className="overflow-hidden p-0">
