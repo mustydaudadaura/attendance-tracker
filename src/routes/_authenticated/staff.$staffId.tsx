@@ -95,6 +95,15 @@ function StaffHistoryPage() {
   const presentDays = rows.filter((r) => r.clock_in).length;
   const netPay = Math.max(0, Number(staff?.base_salary ?? 0) - totalDeduction);
 
+  const STAFF_PALETTE = [
+    "#0EA5E9", "#8B5CF6", "#EC4899", "#F59E0B", "#10B981",
+    "#EF4444", "#14B8A6", "#F97316", "#6366F1", "#84CC16",
+    "#06B6D4", "#D946EF",
+  ];
+  const staffColor = STAFF_PALETTE[
+    staffId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) % STAFF_PALETTE.length
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -104,7 +113,10 @@ function StaffHistoryPage() {
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to staff
             </Link>
           </Button>
-          <h2 className="text-2xl font-bold">{staff?.full_name ?? "Staff"}</h2>
+          <h2 className="flex items-center gap-3 text-2xl font-bold">
+            <span className="inline-block h-4 w-4 rounded-full ring-2 ring-offset-2 ring-offset-background" style={{ backgroundColor: staffColor, boxShadow: `0 0 0 2px ${staffColor}33` }} />
+            {staff?.full_name ?? "Staff"}
+          </h2>
           <p className="text-sm text-muted-foreground capitalize">
             {staff?.department} · PIN {staff?.pin} · Base salary ₦
             {Number(staff?.base_salary ?? 0).toLocaleString()}
@@ -155,7 +167,7 @@ function StaffHistoryPage() {
                   paddingAngle={2}
                   label
                 >
-                  <Cell fill="hsl(var(--success))" />
+                  <Cell fill={staffColor} />
                   <Cell fill="hsl(var(--destructive))" />
                 </Pie>
                 <Tooltip />
@@ -178,7 +190,7 @@ function StaffHistoryPage() {
                 <XAxis dataKey="date" fontSize={11} />
                 <YAxis fontSize={11} />
                 <Tooltip formatter={(v: number) => `₦${v.toLocaleString()}`} />
-                <Bar dataKey="deduction" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="deduction" fill={staffColor} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
