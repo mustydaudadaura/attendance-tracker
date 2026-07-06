@@ -85,6 +85,11 @@ function StaffPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex gap-2">
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/staff/$staffId" params={{ staffId: s.id }}>
+                          <History className="mr-1 h-4 w-4" /> History
+                        </Link>
+                      </Button>
                       <StaffDialog existing={s} trigger={<Button size="sm" variant="outline"><Pencil className="h-4 w-4" /></Button>} />
                       <Button size="sm" variant="outline" onClick={() => { if (confirm(`Delete ${s.full_name}?`)) del.mutate(s.id); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
