@@ -34,14 +34,33 @@ function Payroll() {
     },
   });
 
+  // Count Mon-Fri working days in the selected month up to today (Lagos)
+  const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  let workingDaysElapsed = 0;
+  let totalWorkingDays = 0;
+  for (let d = 1; d <= new Date(year, m, 0).getDate(); d++) {
+    const dt = new Date(year, m - 1, d);
+    const dow = dt.getDay(); // 0=Sun, 6=Sat
+    if (dow === 0 || dow === 6) continue;
+    totalWorkingDays++;
+    const iso = `${year}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    if (iso <= todayStr) workingDaysElapsed++;
+  }
+  const WORKING_DAYS = totalWorkingDays || 22;
+
   const rows = (data?.staff ?? []).map((s) => {
     const mine = (data?.att ?? []).filter((a) => a.staff_id === s.id);
     const daysPresent = mine.length;
     const lateDays = mine.filter((a) => !a.on_time).length;
     const totalLateMinutes = mine.reduce((n, a) => n + (a.late_minutes ?? 0), 0);
-    const totalDeduction = mine.reduce((n, a) => n + Number(a.deduction_amount ?? 0), 0);
+    const latePct = mine.reduce((n, a) => n + Number(a.deduction_amount ?? 0), 0);
+    const absentDays = Math.max(0, workingDaysElapsed - daysPresent);
+    const absentPct = absentDays * 100;
+    const totalPct = latePct + absentPct;
+    const dailyPay = Number(s.base_salary) / WORKING_DAYS;
+    const totalDeduction = Math.min(Number(s.base_salary), (dailyPay * totalPct) / 100);
     const netPay = Math.max(0, Number(s.base_salary) - totalDeduction);
-    return { ...s, daysPresent, lateDays, totalLateMinutes, totalDeduction, netPay };
+    return { ...s, daysPresent, absentDays, lateDays, totalLateMinutes, latePct, absentPct, totalPct, totalDeduction, netPay };
   });
 
   const totals = rows.reduce((acc, r) => ({
