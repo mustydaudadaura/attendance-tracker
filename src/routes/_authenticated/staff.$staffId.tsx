@@ -93,8 +93,10 @@ function StaffHistoryPage() {
   const WORKING_DAYS_PER_MONTH = 22;
   const dailyPay = Number(staff?.base_salary ?? 0) / WORKING_DAYS_PER_MONTH;
   const rowDeductionNaira = (r: Attendance) => (dailyPay * Number(r.deduction_amount || 0)) / 100;
-  const totalDeductionPct = rows.reduce((sum, r) => sum + Number(r.deduction_amount || 0), 0);
+  const latePct = rows.reduce((sum, r) => sum + Number(r.deduction_amount || 0), 0);
+  const totalDeductionPct = latePct; // history table shows recorded (late) deductions only
   const totalDeduction = rows.reduce((sum, r) => sum + rowDeductionNaira(r), 0);
+  const lateNaira = totalDeduction;
   const lateDays = rows.filter((r) => !r.on_time).length;
   const presentDays = rows.filter((r) => r.clock_in).length;
   const netPay = Math.max(0, Number(staff?.base_salary ?? 0) - totalDeduction);
@@ -151,6 +153,28 @@ function StaffHistoryPage() {
           </p>
         </Card>
       </div>
+
+      <Card className="p-5">
+        <p className="mb-3 text-sm font-semibold">Deduction breakdown</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="rounded-lg border p-4">
+            <p className="text-xs uppercase text-muted-foreground">Late</p>
+            <p className="mt-1 text-xl font-bold text-destructive">{latePct}%</p>
+            <p className="text-xs text-muted-foreground">− ₦{Math.round(lateNaira).toLocaleString()} ({lateDays} late day{lateDays === 1 ? "" : "s"})</p>
+          </div>
+          <div className="rounded-lg border p-4">
+            <p className="text-xs uppercase text-muted-foreground">Absent</p>
+            <p className="mt-1 text-xl font-bold text-muted-foreground">Tracked in payroll</p>
+            <p className="text-xs text-muted-foreground">Absent days are counted per full month on the Payroll page (100% of daily pay each).</p>
+          </div>
+          <div className="rounded-lg border p-4 bg-muted/30">
+            <p className="text-xs uppercase text-muted-foreground">Total (range)</p>
+            <p className="mt-1 text-xl font-bold text-destructive">{totalDeductionPct}%</p>
+            <p className="text-xs text-muted-foreground">− ₦{Math.round(totalDeduction).toLocaleString()} · Daily pay ₦{Math.round(dailyPay).toLocaleString()}</p>
+          </div>
+        </div>
+      </Card>
+
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-4">

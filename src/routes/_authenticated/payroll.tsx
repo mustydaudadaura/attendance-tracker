@@ -100,16 +100,22 @@ function Payroll() {
                 <th className="px-4 py-3 text-right">Late days</th>
                 <th className="px-4 py-3 text-right">Late min</th>
                 <th className="px-4 py-3 text-right">Base salary</th>
-                <th className="px-4 py-3 text-right">Deduction %</th>
+                <th className="px-4 py-3 text-right">Late %</th>
+                <th className="px-4 py-3 text-right">Absent %</th>
+                <th className="px-4 py-3 text-right">Total %</th>
                 <th className="px-4 py-3 text-right">Deduction ₦</th>
                 <th className="px-4 py-3 text-right">Net pay</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">No staff registered yet.</td></tr>
+                <tr><td colSpan={11} className="px-4 py-12 text-center text-muted-foreground">No staff registered yet.</td></tr>
               )}
-              {rows.map((r) => (
+              {rows.map((r) => {
+                const dailyPay = Number(r.base_salary) / WORKING_DAYS;
+                const lateNaira = (dailyPay * r.latePct) / 100;
+                const absentNaira = (dailyPay * r.absentPct) / 100;
+                return (
                 <tr key={r.id} className="border-t">
                   <td className="px-4 py-3 font-medium">{r.full_name}</td>
                   <td className="px-4 py-3 capitalize text-muted-foreground">{r.department}</td>
@@ -118,18 +124,26 @@ function Payroll() {
                   <td className="px-4 py-3 text-right">{r.lateDays}</td>
                   <td className="px-4 py-3 text-right">{r.totalLateMinutes}</td>
                   <td className="px-4 py-3 text-right">₦{Number(r.base_salary).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right text-destructive">
+                  <td className="px-4 py-3 text-right">
+                    {r.latePct > 0 ? (
+                      <><span className="text-destructive">{r.latePct}%</span><div className="text-xs text-muted-foreground">− ₦{Math.round(lateNaira).toLocaleString()}</div></>
+                    ) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {r.absentPct > 0 ? (
+                      <><span className="text-destructive">{r.absentPct}%</span><div className="text-xs text-muted-foreground">− ₦{Math.round(absentNaira).toLocaleString()}</div></>
+                    ) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-destructive">
                     {r.totalPct > 0 ? `${r.totalPct}%` : "—"}
-                    {r.absentPct > 0 && (
-                      <div className="text-xs text-muted-foreground">{r.absentPct}% absent + {r.latePct}% late</div>
-                    )}
                   </td>
                   <td className="px-4 py-3 text-right text-destructive">
                     {r.totalDeduction > 0 ? `− ₦${Math.round(r.totalDeduction).toLocaleString()}` : "—"}
                   </td>
                   <td className="px-4 py-3 text-right font-semibold text-success">₦{Math.round(r.netPay).toLocaleString()}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
