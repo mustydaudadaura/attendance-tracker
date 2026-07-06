@@ -14,16 +14,115 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attendance: {
+        Row: {
+          clock_in: string | null
+          clock_out: string | null
+          created_at: string
+          deduction_amount: number
+          id: string
+          late_minutes: number
+          on_time: boolean
+          staff_id: string
+          work_date: string
+        }
+        Insert: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          deduction_amount?: number
+          id?: string
+          late_minutes?: number
+          on_time?: boolean
+          staff_id: string
+          work_date: string
+        }
+        Update: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          deduction_amount?: number
+          id?: string
+          late_minutes?: number
+          on_time?: boolean
+          staff_id?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff: {
+        Row: {
+          active: boolean
+          base_salary: number
+          created_at: string
+          department: Database["public"]["Enums"]["department"]
+          full_name: string
+          id: string
+          pin: string
+        }
+        Insert: {
+          active?: boolean
+          base_salary?: number
+          created_at?: string
+          department: Database["public"]["Enums"]["department"]
+          full_name: string
+          id?: string
+          pin: string
+        }
+        Update: {
+          active?: boolean
+          base_salary?: number
+          created_at?: string
+          department?: Database["public"]["Enums"]["department"]
+          full_name?: string
+          id?: string
+          pin?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      punch_clock: { Args: { p_pin: string }; Returns: Json }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
+      department: "nursery" | "primary"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +249,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+      department: ["nursery", "primary"],
+    },
   },
 } as const
