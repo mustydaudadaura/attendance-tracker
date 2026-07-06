@@ -74,7 +74,7 @@ function Payroll() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Payroll</h2>
-          <p className="text-sm text-muted-foreground">Base salary minus lateness deductions from attendance records.</p>
+          <p className="text-sm text-muted-foreground">Late = 1% of daily pay per 5 minutes. Absent day = 100% of daily pay ({WORKING_DAYS} working days this month).</p>
         </div>
         <div>
           <Label htmlFor="month">Month</Label>
