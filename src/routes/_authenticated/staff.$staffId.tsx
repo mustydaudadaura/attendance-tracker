@@ -101,7 +101,7 @@ function StaffHistoryPage() {
     "#06B6D4", "#D946EF",
   ];
   const staffColor = STAFF_PALETTE[
-    staffId.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % STAFF_PALETTE.length
+    staffId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) % STAFF_PALETTE.length
   ];
 
   return (
