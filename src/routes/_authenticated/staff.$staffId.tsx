@@ -140,8 +140,9 @@ function StaffHistoryPage() {
         <Card className="p-4">
           <p className="text-xs uppercase text-muted-foreground">Total deductions</p>
           <p className="mt-1 text-2xl font-bold text-destructive">
-            ₦{totalDeduction.toLocaleString()}
+            {totalDeductionPct}%
           </p>
+          <p className="text-xs text-muted-foreground">≈ ₦{Math.round(totalDeduction).toLocaleString()}</p>
         </Card>
         <Card className="p-4">
           <p className="text-xs uppercase text-muted-foreground">Net pay (range)</p>
