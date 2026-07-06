@@ -271,7 +271,12 @@ function StaffHistoryPage() {
                       (Number(r.deduction_amount) > 0 ? "text-destructive" : "")
                     }
                   >
-                    ₦{Number(r.deduction_amount || 0).toLocaleString()}
+                    {Number(r.deduction_amount || 0)}%
+                    {Number(r.deduction_amount) > 0 && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        (≈ ₦{Math.round(rowDeductionNaira(r)).toLocaleString()})
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
