@@ -34,14 +34,33 @@ function Payroll() {
     },
   });
 
+  // Count Mon-Fri working days in the selected month up to today (Lagos)
+  const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  let workingDaysElapsed = 0;
+  let totalWorkingDays = 0;
+  for (let d = 1; d <= new Date(year, m, 0).getDate(); d++) {
+    const dt = new Date(year, m - 1, d);
+    const dow = dt.getDay(); // 0=Sun, 6=Sat
+    if (dow === 0 || dow === 6) continue;
+    totalWorkingDays++;
+    const iso = `${year}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    if (iso <= todayStr) workingDaysElapsed++;
+  }
+  const WORKING_DAYS = totalWorkingDays || 22;
+
   const rows = (data?.staff ?? []).map((s) => {
     const mine = (data?.att ?? []).filter((a) => a.staff_id === s.id);
     const daysPresent = mine.length;
     const lateDays = mine.filter((a) => !a.on_time).length;
     const totalLateMinutes = mine.reduce((n, a) => n + (a.late_minutes ?? 0), 0);
-    const totalDeduction = mine.reduce((n, a) => n + Number(a.deduction_amount ?? 0), 0);
+    const latePct = mine.reduce((n, a) => n + Number(a.deduction_amount ?? 0), 0);
+    const absentDays = Math.max(0, workingDaysElapsed - daysPresent);
+    const absentPct = absentDays * 100;
+    const totalPct = latePct + absentPct;
+    const dailyPay = Number(s.base_salary) / WORKING_DAYS;
+    const totalDeduction = Math.min(Number(s.base_salary), (dailyPay * totalPct) / 100);
     const netPay = Math.max(0, Number(s.base_salary) - totalDeduction);
-    return { ...s, daysPresent, lateDays, totalLateMinutes, totalDeduction, netPay };
+    return { ...s, daysPresent, absentDays, lateDays, totalLateMinutes, latePct, absentPct, totalPct, totalDeduction, netPay };
   });
 
   const totals = rows.reduce((acc, r) => ({
@@ -55,7 +74,7 @@ function Payroll() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Payroll</h2>
-          <p className="text-sm text-muted-foreground">Base salary minus lateness deductions from attendance records.</p>
+          <p className="text-sm text-muted-foreground">Late = 1% of daily pay per 5 minutes. Absent day = 100% of daily pay ({WORKING_DAYS} working days this month).</p>
         </div>
         <div>
           <Label htmlFor="month">Month</Label>
@@ -64,9 +83,9 @@ function Payroll() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total salaries</div><div className="mt-2 text-2xl font-bold">₦{totals.salary.toLocaleString()}</div></Card>
-        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total deductions</div><div className="mt-2 text-2xl font-bold text-destructive">₦{totals.deduction.toLocaleString()}</div></Card>
-        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total net pay</div><div className="mt-2 text-2xl font-bold text-success">₦{totals.net.toLocaleString()}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total salaries</div><div className="mt-2 text-2xl font-bold">₦{Math.round(totals.salary).toLocaleString()}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total deductions</div><div className="mt-2 text-2xl font-bold text-destructive">₦{Math.round(totals.deduction).toLocaleString()}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total net pay</div><div className="mt-2 text-2xl font-bold text-success">₦{Math.round(totals.net).toLocaleString()}</div></Card>
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -76,30 +95,39 @@ function Payroll() {
               <tr>
                 <th className="px-4 py-3">Staff</th>
                 <th className="px-4 py-3">Dept</th>
-                <th className="px-4 py-3 text-right">Days present</th>
+                <th className="px-4 py-3 text-right">Present</th>
+                <th className="px-4 py-3 text-right">Absent</th>
                 <th className="px-4 py-3 text-right">Late days</th>
-                <th className="px-4 py-3 text-right">Late minutes</th>
+                <th className="px-4 py-3 text-right">Late min</th>
                 <th className="px-4 py-3 text-right">Base salary</th>
-                <th className="px-4 py-3 text-right">Deductions</th>
+                <th className="px-4 py-3 text-right">Deduction %</th>
+                <th className="px-4 py-3 text-right">Deduction ₦</th>
                 <th className="px-4 py-3 text-right">Net pay</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">No staff registered yet.</td></tr>
+                <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">No staff registered yet.</td></tr>
               )}
               {rows.map((r) => (
                 <tr key={r.id} className="border-t">
                   <td className="px-4 py-3 font-medium">{r.full_name}</td>
                   <td className="px-4 py-3 capitalize text-muted-foreground">{r.department}</td>
                   <td className="px-4 py-3 text-right">{r.daysPresent}</td>
+                  <td className="px-4 py-3 text-right text-destructive">{r.absentDays}</td>
                   <td className="px-4 py-3 text-right">{r.lateDays}</td>
                   <td className="px-4 py-3 text-right">{r.totalLateMinutes}</td>
                   <td className="px-4 py-3 text-right">₦{Number(r.base_salary).toLocaleString()}</td>
                   <td className="px-4 py-3 text-right text-destructive">
-                    {r.totalDeduction > 0 ? `− ₦${r.totalDeduction.toLocaleString()}` : "—"}
+                    {r.totalPct > 0 ? `${r.totalPct}%` : "—"}
+                    {r.absentPct > 0 && (
+                      <div className="text-xs text-muted-foreground">{r.absentPct}% absent + {r.latePct}% late</div>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-success">₦{r.netPay.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right text-destructive">
+                    {r.totalDeduction > 0 ? `− ₦${Math.round(r.totalDeduction).toLocaleString()}` : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-success">₦{Math.round(r.netPay).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>

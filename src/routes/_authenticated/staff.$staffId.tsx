@@ -90,7 +90,11 @@ function StaffHistoryPage() {
     },
   });
 
-  const totalDeduction = rows.reduce((sum, r) => sum + Number(r.deduction_amount || 0), 0);
+  const WORKING_DAYS_PER_MONTH = 22;
+  const dailyPay = Number(staff?.base_salary ?? 0) / WORKING_DAYS_PER_MONTH;
+  const rowDeductionNaira = (r: Attendance) => (dailyPay * Number(r.deduction_amount || 0)) / 100;
+  const totalDeductionPct = rows.reduce((sum, r) => sum + Number(r.deduction_amount || 0), 0);
+  const totalDeduction = rows.reduce((sum, r) => sum + rowDeductionNaira(r), 0);
   const lateDays = rows.filter((r) => !r.on_time).length;
   const presentDays = rows.filter((r) => r.clock_in).length;
   const netPay = Math.max(0, Number(staff?.base_salary ?? 0) - totalDeduction);
@@ -136,13 +140,14 @@ function StaffHistoryPage() {
         <Card className="p-4">
           <p className="text-xs uppercase text-muted-foreground">Total deductions</p>
           <p className="mt-1 text-2xl font-bold text-destructive">
-            ₦{totalDeduction.toLocaleString()}
+            {totalDeductionPct}%
           </p>
+          <p className="text-xs text-muted-foreground">≈ ₦{Math.round(totalDeduction).toLocaleString()}</p>
         </Card>
         <Card className="p-4">
           <p className="text-xs uppercase text-muted-foreground">Net pay (range)</p>
           <p className="mt-1 text-2xl font-bold text-success">
-            ₦{netPay.toLocaleString()}
+            ₦{Math.round(netPay).toLocaleString()}
           </p>
         </Card>
       </div>
@@ -177,20 +182,20 @@ function StaffHistoryPage() {
           )}
         </Card>
         <Card className="p-4">
-          <p className="mb-2 text-sm font-semibold">Daily deductions (₦)</p>
+          <p className="mb-2 text-sm font-semibold">Daily deduction (% of daily pay)</p>
           {rows.length === 0 ? (
             <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">No data</div>
           ) : (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={[...rows].reverse().map((r) => ({
                 date: r.work_date.slice(5),
-                deduction: Number(r.deduction_amount || 0),
+                percent: Number(r.deduction_amount || 0),
               }))}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis dataKey="date" fontSize={11} />
-                <YAxis fontSize={11} />
-                <Tooltip formatter={(v: number) => `₦${v.toLocaleString()}`} />
-                <Bar dataKey="deduction" fill={staffColor} radius={[4, 4, 0, 0]} />
+                <YAxis fontSize={11} unit="%" />
+                <Tooltip formatter={(v: number) => `${v}%`} />
+                <Bar dataKey="percent" fill={staffColor} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -266,7 +271,12 @@ function StaffHistoryPage() {
                       (Number(r.deduction_amount) > 0 ? "text-destructive" : "")
                     }
                   >
-                    ₦{Number(r.deduction_amount || 0).toLocaleString()}
+                    {Number(r.deduction_amount || 0)}%
+                    {Number(r.deduction_amount) > 0 && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        (≈ ₦{Math.round(rowDeductionNaira(r)).toLocaleString()})
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -281,7 +291,8 @@ function StaffHistoryPage() {
                     {rows.reduce((s, r) => s + (r.late_minutes || 0), 0)}
                   </td>
                   <td className="px-4 py-3 text-right text-destructive">
-                    ₦{totalDeduction.toLocaleString()}
+                    {totalDeductionPct}%
+                    <span className="ml-2 text-xs text-muted-foreground">(≈ ₦{Math.round(totalDeduction).toLocaleString()})</span>
                   </td>
                 </tr>
               </tfoot>

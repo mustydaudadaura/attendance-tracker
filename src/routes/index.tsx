@@ -17,7 +17,7 @@ type PunchResult = {
   clock_in?: string;
   clock_out?: string;
   late_minutes?: number;
-  deduction_amount?: number;
+  deduction_percent?: number;
   on_time?: boolean;
 };
 
@@ -156,7 +156,7 @@ function Kiosk() {
                 ) : (
                   <div className="mt-3 space-y-1 rounded-md bg-destructive/15 px-4 py-3 text-sm text-destructive">
                     <p className="font-semibold">Late by {result.late_minutes} minute{result.late_minutes === 1 ? "" : "s"}</p>
-                    <p>Deduction: ₦{Number(result.deduction_amount).toLocaleString()}</p>
+                    <p>Deduction: {Number(result.deduction_percent)}% of daily pay</p>
                   </div>
                 )
               )}
