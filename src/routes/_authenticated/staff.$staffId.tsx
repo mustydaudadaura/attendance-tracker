@@ -113,7 +113,10 @@ function StaffHistoryPage() {
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to staff
             </Link>
           </Button>
-          <h2 className="text-2xl font-bold">{staff?.full_name ?? "Staff"}</h2>
+          <h2 className="flex items-center gap-3 text-2xl font-bold">
+            <span className="inline-block h-4 w-4 rounded-full ring-2 ring-offset-2 ring-offset-background" style={{ backgroundColor: staffColor, boxShadow: `0 0 0 2px ${staffColor}33` }} />
+            {staff?.full_name ?? "Staff"}
+          </h2>
           <p className="text-sm text-muted-foreground capitalize">
             {staff?.department} · PIN {staff?.pin} · Base salary ₦
             {Number(staff?.base_salary ?? 0).toLocaleString()}
