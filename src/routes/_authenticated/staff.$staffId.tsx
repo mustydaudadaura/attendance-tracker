@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
+import {
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/staff/$staffId")({
   component: StaffHistoryPage,
@@ -129,6 +132,56 @@ function StaffHistoryPage() {
           <p className="mt-1 text-2xl font-bold text-success">
             ₦{netPay.toLocaleString()}
           </p>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-4">
+          <p className="mb-2 text-sm font-semibold">On-time vs Late</p>
+          {presentDays === 0 ? (
+            <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">No data</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "On time", value: presentDays - lateDays },
+                    { name: "Late", value: lateDays },
+                  ]}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={55}
+                  outerRadius={90}
+                  paddingAngle={2}
+                  label
+                >
+                  <Cell fill="hsl(var(--success))" />
+                  <Cell fill="hsl(var(--destructive))" />
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+        <Card className="p-4">
+          <p className="mb-2 text-sm font-semibold">Daily deductions (₦)</p>
+          {rows.length === 0 ? (
+            <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">No data</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={[...rows].reverse().map((r) => ({
+                date: r.work_date.slice(5),
+                deduction: Number(r.deduction_amount || 0),
+              }))}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis dataKey="date" fontSize={11} />
+                <YAxis fontSize={11} />
+                <Tooltip formatter={(v: number) => `₦${v.toLocaleString()}`} />
+                <Bar dataKey="deduction" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </Card>
       </div>
 
