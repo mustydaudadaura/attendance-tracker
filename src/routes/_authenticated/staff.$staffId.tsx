@@ -291,7 +291,8 @@ function StaffHistoryPage() {
                     {rows.reduce((s, r) => s + (r.late_minutes || 0), 0)}
                   </td>
                   <td className="px-4 py-3 text-right text-destructive">
-                    ₦{totalDeduction.toLocaleString()}
+                    {totalDeductionPct}%
+                    <span className="ml-2 text-xs text-muted-foreground">(≈ ₦{Math.round(totalDeduction).toLocaleString()})</span>
                   </td>
                 </tr>
               </tfoot>
