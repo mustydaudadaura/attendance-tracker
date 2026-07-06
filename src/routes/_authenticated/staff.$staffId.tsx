@@ -93,8 +93,10 @@ function StaffHistoryPage() {
   const WORKING_DAYS_PER_MONTH = 22;
   const dailyPay = Number(staff?.base_salary ?? 0) / WORKING_DAYS_PER_MONTH;
   const rowDeductionNaira = (r: Attendance) => (dailyPay * Number(r.deduction_amount || 0)) / 100;
-  const totalDeductionPct = rows.reduce((sum, r) => sum + Number(r.deduction_amount || 0), 0);
+  const latePct = rows.reduce((sum, r) => sum + Number(r.deduction_amount || 0), 0);
+  const totalDeductionPct = latePct; // history table shows recorded (late) deductions only
   const totalDeduction = rows.reduce((sum, r) => sum + rowDeductionNaira(r), 0);
+  const lateNaira = totalDeduction;
   const lateDays = rows.filter((r) => !r.on_time).length;
   const presentDays = rows.filter((r) => r.clock_in).length;
   const netPay = Math.max(0, Number(staff?.base_salary ?? 0) - totalDeduction);
