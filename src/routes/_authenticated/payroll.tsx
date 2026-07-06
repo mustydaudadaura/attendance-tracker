@@ -142,7 +142,8 @@ function Payroll() {
                   </td>
                   <td className="px-4 py-3 text-right font-semibold text-success">₦{Math.round(r.netPay).toLocaleString()}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
