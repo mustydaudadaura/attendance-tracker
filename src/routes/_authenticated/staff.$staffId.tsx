@@ -182,20 +182,20 @@ function StaffHistoryPage() {
           )}
         </Card>
         <Card className="p-4">
-          <p className="mb-2 text-sm font-semibold">Daily deductions (₦)</p>
+          <p className="mb-2 text-sm font-semibold">Daily deduction (% of daily pay)</p>
           {rows.length === 0 ? (
             <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">No data</div>
           ) : (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={[...rows].reverse().map((r) => ({
                 date: r.work_date.slice(5),
-                deduction: Number(r.deduction_amount || 0),
+                percent: Number(r.deduction_amount || 0),
               }))}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis dataKey="date" fontSize={11} />
-                <YAxis fontSize={11} />
-                <Tooltip formatter={(v: number) => `₦${v.toLocaleString()}`} />
-                <Bar dataKey="deduction" fill={staffColor} radius={[4, 4, 0, 0]} />
+                <YAxis fontSize={11} unit="%" />
+                <Tooltip formatter={(v: number) => `${v}%`} />
+                <Bar dataKey="percent" fill={staffColor} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
