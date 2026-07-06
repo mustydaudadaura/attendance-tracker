@@ -17,7 +17,7 @@ type PunchResult = {
   clock_in?: string;
   clock_out?: string;
   late_minutes?: number;
-  deduction_amount?: number;
+  deduction_percent?: number;
   on_time?: boolean;
 };
 
