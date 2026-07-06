@@ -95,6 +95,15 @@ function StaffHistoryPage() {
   const presentDays = rows.filter((r) => r.clock_in).length;
   const netPay = Math.max(0, Number(staff?.base_salary ?? 0) - totalDeduction);
 
+  const STAFF_PALETTE = [
+    "#0EA5E9", "#8B5CF6", "#EC4899", "#F59E0B", "#10B981",
+    "#EF4444", "#14B8A6", "#F97316", "#6366F1", "#84CC16",
+    "#06B6D4", "#D946EF",
+  ];
+  const staffColor = STAFF_PALETTE[
+    Array.from(staffId).reduce((a, c) => a + c.charCodeAt(0), 0) % STAFF_PALETTE.length
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
