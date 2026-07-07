@@ -48,19 +48,22 @@ function Payroll() {
   }
   const WORKING_DAYS = totalWorkingDays || 22;
 
+  const MISSED_OUT_PCT = 50; // penalty per day with clock-in but no clock-out (past days)
   const rows = (data?.staff ?? []).map((s) => {
     const mine = (data?.att ?? []).filter((a) => a.staff_id === s.id);
     const daysPresent = mine.length;
     const lateDays = mine.filter((a) => !a.on_time).length;
     const totalLateMinutes = mine.reduce((n, a) => n + (a.late_minutes ?? 0), 0);
     const latePct = mine.reduce((n, a) => n + Number(a.deduction_amount ?? 0), 0);
+    const missedOutDays = mine.filter((a) => a.clock_in && !a.clock_out && a.work_date < todayStr).length;
+    const missedOutPct = missedOutDays * MISSED_OUT_PCT;
     const absentDays = Math.max(0, workingDaysElapsed - daysPresent);
     const absentPct = absentDays * 100;
-    const totalPct = latePct + absentPct;
+    const totalPct = latePct + absentPct + missedOutPct;
     const dailyPay = Number(s.base_salary) / WORKING_DAYS;
     const totalDeduction = Math.min(Number(s.base_salary), (dailyPay * totalPct) / 100);
     const netPay = Math.max(0, Number(s.base_salary) - totalDeduction);
-    return { ...s, daysPresent, absentDays, lateDays, totalLateMinutes, latePct, absentPct, totalPct, totalDeduction, netPay };
+    return { ...s, daysPresent, absentDays, lateDays, totalLateMinutes, latePct, absentPct, missedOutDays, missedOutPct, totalPct, totalDeduction, netPay };
   });
 
   const totals = rows.reduce((acc, r) => ({
