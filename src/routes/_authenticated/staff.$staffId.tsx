@@ -184,7 +184,6 @@ function StaffHistoryPage() {
           </div>
         </div>
       </Card>
-      </Card>
 
 
       <div className="grid gap-4 lg:grid-cols-2">
