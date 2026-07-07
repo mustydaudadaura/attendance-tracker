@@ -25,7 +25,7 @@ function Payroll() {
     queryFn: async () => {
       const [staff, att] = await Promise.all([
         supabase.from("staff").select("id, full_name, department, base_salary, active"),
-        supabase.from("attendance").select("staff_id, work_date, late_minutes, deduction_amount, on_time")
+        supabase.from("attendance").select("staff_id, work_date, clock_in, clock_out, late_minutes, deduction_amount, on_time")
           .gte("work_date", start).lt("work_date", end),
       ]);
       if (staff.error) throw staff.error;
