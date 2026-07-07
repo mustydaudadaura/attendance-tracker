@@ -25,7 +25,7 @@ function Payroll() {
     queryFn: async () => {
       const [staff, att] = await Promise.all([
         supabase.from("staff").select("id, full_name, department, base_salary, active"),
-        supabase.from("attendance").select("staff_id, work_date, late_minutes, deduction_amount, on_time")
+        supabase.from("attendance").select("staff_id, work_date, clock_in, clock_out, late_minutes, deduction_amount, on_time")
           .gte("work_date", start).lt("work_date", end),
       ]);
       if (staff.error) throw staff.error;
@@ -48,19 +48,22 @@ function Payroll() {
   }
   const WORKING_DAYS = totalWorkingDays || 22;
 
+  const MISSED_OUT_PCT = 50; // penalty per day with clock-in but no clock-out (past days)
   const rows = (data?.staff ?? []).map((s) => {
     const mine = (data?.att ?? []).filter((a) => a.staff_id === s.id);
     const daysPresent = mine.length;
     const lateDays = mine.filter((a) => !a.on_time).length;
     const totalLateMinutes = mine.reduce((n, a) => n + (a.late_minutes ?? 0), 0);
     const latePct = mine.reduce((n, a) => n + Number(a.deduction_amount ?? 0), 0);
+    const missedOutDays = mine.filter((a) => a.clock_in && !a.clock_out && a.work_date < todayStr).length;
+    const missedOutPct = missedOutDays * MISSED_OUT_PCT;
     const absentDays = Math.max(0, workingDaysElapsed - daysPresent);
     const absentPct = absentDays * 100;
-    const totalPct = latePct + absentPct;
+    const totalPct = latePct + absentPct + missedOutPct;
     const dailyPay = Number(s.base_salary) / WORKING_DAYS;
     const totalDeduction = Math.min(Number(s.base_salary), (dailyPay * totalPct) / 100);
     const netPay = Math.max(0, Number(s.base_salary) - totalDeduction);
-    return { ...s, daysPresent, absentDays, lateDays, totalLateMinutes, latePct, absentPct, totalPct, totalDeduction, netPay };
+    return { ...s, daysPresent, absentDays, lateDays, totalLateMinutes, latePct, absentPct, missedOutDays, missedOutPct, totalPct, totalDeduction, netPay };
   });
 
   const totals = rows.reduce((acc, r) => ({
@@ -74,7 +77,7 @@ function Payroll() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Payroll</h2>
-          <p className="text-sm text-muted-foreground">Late = 1% of daily pay per 5 minutes. Absent day = 100% of daily pay ({WORKING_DAYS} working days this month).</p>
+          <p className="text-sm text-muted-foreground">Late-in or early-out = 5% of daily pay per 10 minutes. Missed clock-out = 50% penalty. Absent day = 100% ({WORKING_DAYS} working days this month).</p>
         </div>
         <div>
           <Label htmlFor="month">Month</Label>
@@ -99,9 +102,11 @@ function Payroll() {
                 <th className="px-4 py-3 text-right">Absent</th>
                 <th className="px-4 py-3 text-right">Late days</th>
                 <th className="px-4 py-3 text-right">Late min</th>
+                <th className="px-4 py-3 text-right">Missed out</th>
                 <th className="px-4 py-3 text-right">Base salary</th>
                 <th className="px-4 py-3 text-right">Late %</th>
                 <th className="px-4 py-3 text-right">Absent %</th>
+                <th className="px-4 py-3 text-right">Missed %</th>
                 <th className="px-4 py-3 text-right">Total %</th>
                 <th className="px-4 py-3 text-right">Deduction ₦</th>
                 <th className="px-4 py-3 text-right">Net pay</th>
@@ -109,12 +114,13 @@ function Payroll() {
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <tr><td colSpan={11} className="px-4 py-12 text-center text-muted-foreground">No staff registered yet.</td></tr>
+                <tr><td colSpan={13} className="px-4 py-12 text-center text-muted-foreground">No staff registered yet.</td></tr>
               )}
               {rows.map((r) => {
                 const dailyPay = Number(r.base_salary) / WORKING_DAYS;
                 const lateNaira = (dailyPay * r.latePct) / 100;
                 const absentNaira = (dailyPay * r.absentPct) / 100;
+                const missedNaira = (dailyPay * r.missedOutPct) / 100;
                 return (
                 <tr key={r.id} className="border-t">
                   <td className="px-4 py-3 font-medium">{r.full_name}</td>
@@ -123,6 +129,7 @@ function Payroll() {
                   <td className="px-4 py-3 text-right text-destructive">{r.absentDays}</td>
                   <td className="px-4 py-3 text-right">{r.lateDays}</td>
                   <td className="px-4 py-3 text-right">{r.totalLateMinutes}</td>
+                  <td className="px-4 py-3 text-right text-destructive">{r.missedOutDays}</td>
                   <td className="px-4 py-3 text-right">₦{Number(r.base_salary).toLocaleString()}</td>
                   <td className="px-4 py-3 text-right">
                     {r.latePct > 0 ? (
@@ -132,6 +139,11 @@ function Payroll() {
                   <td className="px-4 py-3 text-right">
                     {r.absentPct > 0 ? (
                       <><span className="text-destructive">{r.absentPct}%</span><div className="text-xs text-muted-foreground">− ₦{Math.round(absentNaira).toLocaleString()}</div></>
+                    ) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {r.missedOutPct > 0 ? (
+                      <><span className="text-destructive">{r.missedOutPct}%</span><div className="text-xs text-muted-foreground">− ₦{Math.round(missedNaira).toLocaleString()}</div></>
                     ) : "—"}
                   </td>
                   <td className="px-4 py-3 text-right font-semibold text-destructive">

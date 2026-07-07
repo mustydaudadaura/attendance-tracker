@@ -18,6 +18,7 @@ type PunchResult = {
   clock_out?: string;
   late_minutes?: number;
   deduction_percent?: number;
+  early_minutes?: number;
   on_time?: boolean;
 };
 
@@ -162,7 +163,14 @@ function Kiosk() {
               )}
 
               {result.action === "out" && (
-                <p className="mt-3 text-sm text-muted-foreground">Have a safe trip home.</p>
+                Number(result.early_minutes) > 0 ? (
+                  <div className="mt-3 space-y-1 rounded-md bg-destructive/15 px-4 py-3 text-sm text-destructive">
+                    <p className="font-semibold">Early by {result.early_minutes} minute{result.early_minutes === 1 ? "" : "s"}</p>
+                    <p>Extra deduction added · Total today: {Number(result.deduction_percent)}%</p>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">Have a safe trip home.</p>
+                )
               )}
             </div>
           )}
