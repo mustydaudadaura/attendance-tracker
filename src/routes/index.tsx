@@ -18,6 +18,7 @@ type PunchResult = {
   clock_out?: string;
   late_minutes?: number;
   deduction_percent?: number;
+  early_minutes?: number;
   on_time?: boolean;
 };
 
