@@ -39,13 +39,23 @@ function Kiosk() {
     return () => clearTimeout(t);
   }, [result]);
 
-  async function submit() {
+  async function submit(intent: "in" | "out") {
     if (pin.length !== 4 || busy) return;
     setBusy(true);
     const { data, error } = await supabase.rpc("punch_clock", { p_pin: pin });
     setBusy(false);
     if (error) { setResult({ ok: false, error: error.message }); return; }
-    setResult(data as unknown as PunchResult);
+    const res = data as unknown as PunchResult;
+    if (res.ok && res.action && res.action !== intent) {
+      setResult({
+        ok: false,
+        error: intent === "in"
+          ? "You have already clocked in today. Press Sign Out instead."
+          : "You have not clocked in yet. Press Sign In first.",
+      });
+      return;
+    }
+    setResult(res);
   }
 
   function press(d: string) {
