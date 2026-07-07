@@ -161,16 +161,21 @@ function StaffHistoryPage() {
 
       <Card className="p-5">
         <p className="mb-3 text-sm font-semibold">Deduction breakdown</p>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-4">
           <div className="rounded-lg border p-4">
-            <p className="text-xs uppercase text-muted-foreground">Late</p>
+            <p className="text-xs uppercase text-muted-foreground">Late / early-out</p>
             <p className="mt-1 text-xl font-bold text-destructive">{latePct}%</p>
-            <p className="text-xs text-muted-foreground">− ₦{Math.round(lateNaira).toLocaleString()} ({lateDays} late day{lateDays === 1 ? "" : "s"})</p>
+            <p className="text-xs text-muted-foreground">− ₦{Math.round(lateNaira).toLocaleString()} · 5% per 10 min</p>
+          </div>
+          <div className="rounded-lg border p-4">
+            <p className="text-xs uppercase text-muted-foreground">Missed clock-out</p>
+            <p className="mt-1 text-xl font-bold text-destructive">{missedOutPct}%</p>
+            <p className="text-xs text-muted-foreground">− ₦{Math.round(missedOutNaira).toLocaleString()} ({missedOutDays} day{missedOutDays === 1 ? "" : "s"} · 50% each)</p>
           </div>
           <div className="rounded-lg border p-4">
             <p className="text-xs uppercase text-muted-foreground">Absent</p>
-            <p className="mt-1 text-xl font-bold text-muted-foreground">Tracked in payroll</p>
-            <p className="text-xs text-muted-foreground">Absent days are counted per full month on the Payroll page (100% of daily pay each).</p>
+            <p className="mt-1 text-xl font-bold text-muted-foreground">In payroll</p>
+            <p className="text-xs text-muted-foreground">Counted per full month on Payroll (100% each).</p>
           </div>
           <div className="rounded-lg border p-4 bg-muted/30">
             <p className="text-xs uppercase text-muted-foreground">Total (range)</p>
@@ -178,6 +183,7 @@ function StaffHistoryPage() {
             <p className="text-xs text-muted-foreground">− ₦{Math.round(totalDeduction).toLocaleString()} · Daily pay ₦{Math.round(dailyPay).toLocaleString()}</p>
           </div>
         </div>
+      </Card>
       </Card>
 
 
