@@ -110,15 +110,25 @@ function Kiosk() {
             </Button>
           </div>
 
-          <Button
-            className="mt-6 h-14 w-full text-base"
-            disabled={pin.length !== 4 || busy}
-            onClick={submit}
-          >
-            {busy ? "Processing…" : "Clock In / Out"}
-          </Button>
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <Button
+              className="h-14 text-base bg-success text-success-foreground hover:bg-success/90"
+              disabled={pin.length !== 4 || busy}
+              onClick={() => submit("in")}
+            >
+              <LogIn className="mr-2 h-5 w-5" /> {busy ? "…" : "Sign In"}
+            </Button>
+            <Button
+              variant="destructive"
+              className="h-14 text-base"
+              disabled={pin.length !== 4 || busy}
+              onClick={() => submit("out")}
+            >
+              <LogOut className="mr-2 h-5 w-5" /> {busy ? "…" : "Sign Out"}
+            </Button>
+          </div>
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            Enter your 4-digit PIN. First tap of the day = Clock In. Next tap = Clock Out.
+            Enter your 4-digit PIN, then press Sign In or Sign Out.
           </p>
         </Card>
 
