@@ -35,12 +35,15 @@ function Kiosk() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<PunchResult | null>(null);
   const [now, setNow] = useState(new Date());
-  const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ready" | "denied">("idle");
+  const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ready" | "denied" | "blocked" | "unsupported">("idle");
+  const [geoError, setGeoError] = useState<string | null>(null);
   const fixRef = useRef<Fix | null>(null);
+  const inIframe = typeof window !== "undefined" && window.self !== window.top;
 
   // Prefetch location as soon as the kiosk mounts so submit is instant.
   const refreshFix = useCallback(() => {
-    if (!("geolocation" in navigator)) { setGeoStatus("denied"); return; }
+    setGeoError(null);
+    if (!("geolocation" in navigator)) { setGeoStatus("unsupported"); return; }
     setGeoStatus((s) => (s === "ready" ? s : "locating"));
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -48,7 +51,6 @@ function Kiosk() {
         const lng = pos.coords.longitude;
         fixRef.current = { lat, lng, at: Date.now() };
         setGeoStatus("ready");
-        // Reverse geocode in background — never blocks a sign-in.
         try {
           const r = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=17`,
@@ -60,12 +62,26 @@ function Kiosk() {
           }
         } catch { /* ignore */ }
       },
-      () => setGeoStatus("denied"),
+      (err) => {
+        // code 1 = PERMISSION_DENIED. Distinguish policy-blocked (iframe) vs user-denied.
+        const policyBlocked = /permissions policy|disabled in this document/i.test(err.message);
+        if (err.code === 1 && policyBlocked) {
+          setGeoStatus("blocked");
+          setGeoError("Location is disabled in this preview window. Open the published kiosk URL and allow location.");
+        } else if (err.code === 1) {
+          setGeoStatus("denied");
+          setGeoError("Permission denied. Tap the lock icon in the address bar and allow Location.");
+        } else {
+          setGeoStatus("denied");
+          setGeoError(err.message || "Could not get location. Check GPS / location services.");
+        }
+      },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
     );
   }, []);
 
   useEffect(() => { refreshFix(); }, [refreshFix]);
+
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -175,27 +191,45 @@ function Kiosk() {
           <p className="mt-3 text-center text-xs text-muted-foreground">
             Enter your 4-digit PIN, then press Sign In or Sign Out.
           </p>
-          <div className="mt-2 flex items-center justify-center gap-1.5 text-xs">
-            <MapPin className={cn(
-              "h-3.5 w-3.5",
-              geoStatus === "ready" && "text-success",
-              geoStatus === "locating" && "text-muted-foreground",
-              geoStatus === "denied" && "text-destructive",
-            )} />
-            <span className={cn(
-              geoStatus === "ready" && "text-success",
-              geoStatus === "denied" && "text-destructive",
-              geoStatus !== "ready" && geoStatus !== "denied" && "text-muted-foreground",
-            )}>
-              {geoStatus === "ready" && "Location ready"}
-              {geoStatus === "locating" && "Getting location…"}
-              {geoStatus === "denied" && "Location blocked — please allow"}
-              {geoStatus === "idle" && "Location required"}
-            </span>
-            {geoStatus === "denied" && (
-              <button type="button" onClick={refreshFix} className="ml-2 underline">retry</button>
+          <div className="mt-2 space-y-1 text-center text-xs">
+            <div className="flex items-center justify-center gap-1.5">
+              <MapPin className={cn(
+                "h-3.5 w-3.5",
+                geoStatus === "ready" && "text-success",
+                (geoStatus === "denied" || geoStatus === "blocked" || geoStatus === "unsupported") && "text-destructive",
+                (geoStatus === "locating" || geoStatus === "idle") && "text-muted-foreground",
+              )} />
+              <span className={cn(
+                geoStatus === "ready" && "text-success",
+                (geoStatus === "denied" || geoStatus === "blocked" || geoStatus === "unsupported") && "text-destructive font-medium",
+                (geoStatus === "locating" || geoStatus === "idle") && "text-muted-foreground",
+              )}>
+                {geoStatus === "ready" && "Location ready"}
+                {geoStatus === "locating" && "Getting location…"}
+                {geoStatus === "denied" && "Location permission denied"}
+                {geoStatus === "blocked" && "Location blocked in preview"}
+                {geoStatus === "unsupported" && "This device has no GPS"}
+                {geoStatus === "idle" && "Location required"}
+              </span>
+              {(geoStatus === "denied" || geoStatus === "blocked") && (
+                <button type="button" onClick={refreshFix} className="ml-1 underline">retry</button>
+              )}
+            </div>
+            {geoError && (
+              <p className="text-destructive/80">{geoError}</p>
+            )}
+            {geoStatus === "blocked" && inIframe && (
+              <a
+                href="https://assslamattend.lovable.app"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-block font-semibold text-primary underline"
+              >
+                Open kiosk in a new tab →
+              </a>
             )}
           </div>
+
 
         </Card>
 
