@@ -35,12 +35,15 @@ function Kiosk() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<PunchResult | null>(null);
   const [now, setNow] = useState(new Date());
-  const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ready" | "denied">("idle");
+  const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ready" | "denied" | "blocked" | "unsupported">("idle");
+  const [geoError, setGeoError] = useState<string | null>(null);
   const fixRef = useRef<Fix | null>(null);
+  const inIframe = typeof window !== "undefined" && window.self !== window.top;
 
   // Prefetch location as soon as the kiosk mounts so submit is instant.
   const refreshFix = useCallback(() => {
-    if (!("geolocation" in navigator)) { setGeoStatus("denied"); return; }
+    setGeoError(null);
+    if (!("geolocation" in navigator)) { setGeoStatus("unsupported"); return; }
     setGeoStatus((s) => (s === "ready" ? s : "locating"));
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -48,7 +51,6 @@ function Kiosk() {
         const lng = pos.coords.longitude;
         fixRef.current = { lat, lng, at: Date.now() };
         setGeoStatus("ready");
-        // Reverse geocode in background — never blocks a sign-in.
         try {
           const r = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=17`,
@@ -60,12 +62,26 @@ function Kiosk() {
           }
         } catch { /* ignore */ }
       },
-      () => setGeoStatus("denied"),
+      (err) => {
+        // code 1 = PERMISSION_DENIED. Distinguish policy-blocked (iframe) vs user-denied.
+        const policyBlocked = /permissions policy|disabled in this document/i.test(err.message);
+        if (err.code === 1 && policyBlocked) {
+          setGeoStatus("blocked");
+          setGeoError("Location is disabled in this preview window. Open the published kiosk URL and allow location.");
+        } else if (err.code === 1) {
+          setGeoStatus("denied");
+          setGeoError("Permission denied. Tap the lock icon in the address bar and allow Location.");
+        } else {
+          setGeoStatus("denied");
+          setGeoError(err.message || "Could not get location. Check GPS / location services.");
+        }
+      },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
     );
   }, []);
 
   useEffect(() => { refreshFix(); }, [refreshFix]);
+
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
