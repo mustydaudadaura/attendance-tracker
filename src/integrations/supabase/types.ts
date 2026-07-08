@@ -17,7 +17,13 @@ export type Database = {
       attendance: {
         Row: {
           clock_in: string | null
+          clock_in_address: string | null
+          clock_in_lat: number | null
+          clock_in_lng: number | null
           clock_out: string | null
+          clock_out_address: string | null
+          clock_out_lat: number | null
+          clock_out_lng: number | null
           created_at: string
           deduction_amount: number
           id: string
@@ -28,7 +34,13 @@ export type Database = {
         }
         Insert: {
           clock_in?: string | null
+          clock_in_address?: string | null
+          clock_in_lat?: number | null
+          clock_in_lng?: number | null
           clock_out?: string | null
+          clock_out_address?: string | null
+          clock_out_lat?: number | null
+          clock_out_lng?: number | null
           created_at?: string
           deduction_amount?: number
           id?: string
@@ -39,7 +51,13 @@ export type Database = {
         }
         Update: {
           clock_in?: string | null
+          clock_in_address?: string | null
+          clock_in_lat?: number | null
+          clock_in_lng?: number | null
           clock_out?: string | null
+          clock_out_address?: string | null
+          clock_out_lat?: number | null
+          clock_out_lng?: number | null
           created_at?: string
           deduction_amount?: number
           id?: string
@@ -118,7 +136,17 @@ export type Database = {
         }
         Returns: boolean
       }
-      punch_clock: { Args: { p_pin: string }; Returns: Json }
+      punch_clock:
+        | { Args: { p_pin: string }; Returns: Json }
+        | {
+            Args: {
+              p_address?: string
+              p_lat?: number
+              p_lng?: number
+              p_pin: string
+            }
+            Returns: Json
+          }
     }
     Enums: {
       app_role: "admin"
