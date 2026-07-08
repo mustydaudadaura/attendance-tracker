@@ -259,6 +259,20 @@ function Kiosk() {
                   <p className="mt-3 text-sm text-muted-foreground">Have a safe trip home.</p>
                 )
               )}
+
+              {(result.address || result.lat) && (
+                <div className="mt-4 rounded-md border bg-muted/40 px-3 py-2 text-left text-xs">
+                  <div className="flex items-center gap-1 font-semibold text-foreground">
+                    <MapPin className="h-3.5 w-3.5" /> Location captured
+                  </div>
+                  {result.address && <p className="mt-1 text-muted-foreground">{result.address}</p>}
+                  {result.lat != null && result.lng != null && (
+                    <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                      {Number(result.lat).toFixed(5)}, {Number(result.lng).toFixed(5)}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </Card>
