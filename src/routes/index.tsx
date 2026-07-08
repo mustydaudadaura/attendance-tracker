@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Delete, LogIn, LogOut, ShieldCheck } from "lucide-react";
+import { Delete, LogIn, LogOut, MapPin, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/")({ component: Kiosk });
+export const Route = createFileRoute("/")({
+  component: Kiosk,
+  ssr: false,
+});
 
 type PunchResult = {
   ok: boolean;
@@ -20,13 +23,49 @@ type PunchResult = {
   deduction_percent?: number;
   early_minutes?: number;
   on_time?: boolean;
+  lat?: number;
+  lng?: number;
+  address?: string;
 };
+
+type Fix = { lat: number; lng: number; address?: string; at: number };
 
 function Kiosk() {
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<PunchResult | null>(null);
   const [now, setNow] = useState(new Date());
+  const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ready" | "denied">("idle");
+  const fixRef = useRef<Fix | null>(null);
+
+  // Prefetch location as soon as the kiosk mounts so submit is instant.
+  const refreshFix = useCallback(() => {
+    if (!("geolocation" in navigator)) { setGeoStatus("denied"); return; }
+    setGeoStatus((s) => (s === "ready" ? s : "locating"));
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        fixRef.current = { lat, lng, at: Date.now() };
+        setGeoStatus("ready");
+        // Reverse geocode in background — never blocks a sign-in.
+        try {
+          const r = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=17`,
+            { headers: { "Accept-Language": "en" } },
+          );
+          const j = await r.json();
+          if (j?.display_name && fixRef.current) {
+            fixRef.current = { ...fixRef.current, address: j.display_name as string };
+          }
+        } catch { /* ignore */ }
+      },
+      () => setGeoStatus("denied"),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
+    );
+  }, []);
+
+  useEffect(() => { refreshFix(); }, [refreshFix]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -35,14 +74,20 @@ function Kiosk() {
 
   useEffect(() => {
     if (!result) return;
-    const t = setTimeout(() => { setResult(null); setPin(""); }, 8000);
+    const t = setTimeout(() => { setResult(null); setPin(""); refreshFix(); }, 8000);
     return () => clearTimeout(t);
-  }, [result]);
+  }, [result, refreshFix]);
 
   async function submit(intent: "in" | "out") {
     if (pin.length !== 4 || busy) return;
     setBusy(true);
-    const { data, error } = await supabase.rpc("punch_clock", { p_pin: pin });
+    const fix = fixRef.current;
+    const { data, error } = await supabase.rpc("punch_clock", {
+      p_pin: pin,
+      p_lat: fix?.lat ?? null,
+      p_lng: fix?.lng ?? null,
+      p_address: fix?.address ?? null,
+    });
     setBusy(false);
     if (error) { setResult({ ok: false, error: error.message }); return; }
     const res = data as unknown as PunchResult;
