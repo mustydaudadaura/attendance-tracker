@@ -175,6 +175,28 @@ function Kiosk() {
           <p className="mt-3 text-center text-xs text-muted-foreground">
             Enter your 4-digit PIN, then press Sign In or Sign Out.
           </p>
+          <div className="mt-2 flex items-center justify-center gap-1.5 text-xs">
+            <MapPin className={cn(
+              "h-3.5 w-3.5",
+              geoStatus === "ready" && "text-success",
+              geoStatus === "locating" && "text-muted-foreground",
+              geoStatus === "denied" && "text-destructive",
+            )} />
+            <span className={cn(
+              geoStatus === "ready" && "text-success",
+              geoStatus === "denied" && "text-destructive",
+              geoStatus !== "ready" && geoStatus !== "denied" && "text-muted-foreground",
+            )}>
+              {geoStatus === "ready" && "Location ready"}
+              {geoStatus === "locating" && "Getting location…"}
+              {geoStatus === "denied" && "Location blocked — please allow"}
+              {geoStatus === "idle" && "Location required"}
+            </span>
+            {geoStatus === "denied" && (
+              <button type="button" onClick={refreshFix} className="ml-2 underline">retry</button>
+            )}
+          </div>
+
         </Card>
 
         <Card className={cn(
