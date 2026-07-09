@@ -48,7 +48,7 @@ function Payroll() {
   }
   const WORKING_DAYS = totalWorkingDays || 22;
 
-  const MISSED_OUT_PCT = 50; // penalty per day with clock-in but no clock-out (past days)
+  const MISSED_OUT_PCT = 20; // penalty per day with clock-in but no clock-out (past days)
   const rows = (data?.staff ?? []).map((s) => {
     const mine = (data?.att ?? []).filter((a) => a.staff_id === s.id);
     const daysPresent = mine.length;
