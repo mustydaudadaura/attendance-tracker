@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -311,6 +312,154 @@ function Kiosk() {
           )}
         </Card>
       </main>
+
+      <section className="mx-auto max-w-5xl px-6 pb-12">
+        <PenaltyBoard />
+      </section>
     </div>
   );
+}
+
+type SummaryRow = {
+  staff_id: string;
+  full_name: string;
+  department: string;
+  clock_in: string | null;
+  clock_out: string | null;
+  late_minutes: number;
+  deduction_percent: number;
+  status: "on-time" | "late" | "in" | "missed-out" | "absent" | "not-yet";
+};
+
+function lagosDate(offsetDays = 0) {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit",
+  });
+  const now = new Date();
+  now.setDate(now.getDate() + offsetDays);
+  return fmt.format(now); // yyyy-mm-dd
+}
+
+function useDaySummary(dateStr: string) {
+  return useQuery({
+    queryKey: ["penalty-summary", dateStr],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("daily_penalty_summary" as never, { p_date: dateStr } as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as SummaryRow[];
+    },
+    refetchInterval: 60_000,
+  });
+}
+
+function PenaltyBoard() {
+  const today = lagosDate(0);
+  const yesterday = lagosDate(-1);
+  const todayQ = useDaySummary(today);
+  const yestQ = useDaySummary(yesterday);
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      <DayCard title="Today" dateStr={today} rows={todayQ.data ?? []} loading={todayQ.isLoading} />
+      <DayCard title="Yesterday" dateStr={yesterday} rows={yestQ.data ?? []} loading={yestQ.isLoading} />
+    </div>
+  );
+}
+
+function DayCard({ title, dateStr, rows, loading }: { title: string; dateStr: string; rows: SummaryRow[]; loading: boolean }) {
+  const pretty = new Date(dateStr + "T00:00:00").toLocaleDateString("en-NG", {
+    weekday: "short", day: "numeric", month: "short",
+  });
+  const totals = rows.reduce(
+    (acc, r) => {
+      if (r.status === "on-time") acc.onTime++;
+      else if (r.status === "late") acc.late++;
+      else if (r.status === "in") acc.stillIn++;
+      else if (r.status === "missed-out") acc.missedOut++;
+      else if (r.status === "absent") acc.absent++;
+      acc.penaltyPct += Number(r.deduction_percent) || 0;
+      return acc;
+    },
+    { onTime: 0, late: 0, stillIn: 0, missedOut: 0, absent: 0, penaltyPct: 0 },
+  );
+
+  return (
+    <Card className="p-5">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-lg font-semibold">{title}</h3>
+        <span className="text-xs text-muted-foreground">{pretty}</span>
+      </div>
+
+      <div className="mb-4 grid grid-cols-5 gap-2 text-center text-xs">
+        <Stat label="On time" value={totals.onTime} tone="success" />
+        <Stat label="Late" value={totals.late} tone="warn" />
+        <Stat label="Still in" value={totals.stillIn} tone="muted" />
+        <Stat label="Missed out" value={totals.missedOut} tone="danger" />
+        <Stat label="Absent" value={totals.absent} tone="danger" />
+      </div>
+
+      <div className="max-h-72 overflow-y-auto rounded-md border">
+        <table className="w-full text-xs">
+          <thead className="sticky top-0 bg-muted/70 text-left uppercase text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2">Staff</th>
+              <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2 text-right">Late</th>
+              <th className="px-3 py-2 text-right">Penalty</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && (
+              <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">Loading…</td></tr>
+            )}
+            {!loading && rows.length === 0 && (
+              <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">No staff.</td></tr>
+            )}
+            {rows.map((r) => (
+              <tr key={r.staff_id} className="border-t">
+                <td className="px-3 py-2 font-medium">{r.full_name}</td>
+                <td className="px-3 py-2"><StatusBadge status={r.status} /></td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {r.late_minutes > 0 ? `${r.late_minutes}m` : "—"}
+                </td>
+                <td className={cn(
+                  "px-3 py-2 text-right font-semibold tabular-nums",
+                  Number(r.deduction_percent) > 0 ? "text-destructive" : "text-success",
+                )}>
+                  {Number(r.deduction_percent) > 0 ? `${Number(r.deduction_percent)}%` : "0%"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: number; tone: "success" | "warn" | "danger" | "muted" }) {
+  const toneClass =
+    tone === "success" ? "bg-success/15 text-success" :
+    tone === "warn" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400" :
+    tone === "danger" ? "bg-destructive/15 text-destructive" :
+    "bg-muted text-muted-foreground";
+  return (
+    <div className={cn("rounded-md px-2 py-2", toneClass)}>
+      <div className="text-lg font-bold tabular-nums">{value}</div>
+      <div className="text-[10px] uppercase tracking-wide">{label}</div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: SummaryRow["status"] }) {
+  const map: Record<SummaryRow["status"], { label: string; cls: string }> = {
+    "on-time": { label: "On time", cls: "bg-success/15 text-success" },
+    "late": { label: "Late", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
+    "in": { label: "Signed in", cls: "bg-primary/15 text-primary" },
+    "missed-out": { label: "No sign-out", cls: "bg-destructive/15 text-destructive" },
+    "absent": { label: "Absent", cls: "bg-destructive/15 text-destructive" },
+    "not-yet": { label: "—", cls: "bg-muted text-muted-foreground" },
+  };
+  const { label, cls } = map[status];
+  return <span className={cn("inline-block rounded-full px-2 py-0.5 text-[10px] font-medium uppercase", cls)}>{label}</span>;
 }
