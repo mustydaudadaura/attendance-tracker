@@ -48,7 +48,7 @@ function Payroll() {
   }
   const WORKING_DAYS = totalWorkingDays || 22;
 
-  const MISSED_OUT_PCT = 50; // penalty per day with clock-in but no clock-out (past days)
+  const MISSED_OUT_PCT = 20; // penalty per day with clock-in but no clock-out (past days)
   const rows = (data?.staff ?? []).map((s) => {
     const mine = (data?.att ?? []).filter((a) => a.staff_id === s.id);
     const daysPresent = mine.length;
@@ -77,7 +77,7 @@ function Payroll() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Payroll</h2>
-          <p className="text-sm text-muted-foreground">Late-in or early-out = 5% of daily pay per 10 minutes. Missed clock-out = 50% penalty. Absent day = 100% ({WORKING_DAYS} working days this month).</p>
+          <p className="text-sm text-muted-foreground">Late (after 7:45am) or early sign-out = 5% of daily pay per 5 minutes. Missed sign-out = 20% penalty. Absent day (no sign-in) = 100% ({WORKING_DAYS} working days this month).</p>
         </div>
         <div>
           <Label htmlFor="month">Month</Label>
