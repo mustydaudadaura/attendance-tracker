@@ -129,6 +129,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      daily_penalty_summary: {
+        Args: { p_date: string }
+        Returns: {
+          clock_in: string
+          clock_out: string
+          deduction_percent: number
+          department: string
+          full_name: string
+          late_minutes: number
+          staff_id: string
+          status: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
