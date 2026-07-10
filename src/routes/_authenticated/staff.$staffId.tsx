@@ -199,17 +199,17 @@ function StaffHistoryPage() {
           <div className="rounded-lg border p-4">
             <p className="text-xs uppercase text-muted-foreground">Late / early-out</p>
             <p className="mt-1 text-xl font-bold text-destructive">{latePct}%</p>
-            <p className="text-xs text-muted-foreground">− ₦{Math.round(lateNaira).toLocaleString()} · 5% per 10 min</p>
+            <p className="text-xs text-muted-foreground">− ₦{Math.round(lateNaira).toLocaleString()} · 5% per 5 min</p>
           </div>
           <div className="rounded-lg border p-4">
             <p className="text-xs uppercase text-muted-foreground">Missed clock-out</p>
             <p className="mt-1 text-xl font-bold text-destructive">{missedOutPct}%</p>
-            <p className="text-xs text-muted-foreground">− ₦{Math.round(missedOutNaira).toLocaleString()} ({missedOutDays} day{missedOutDays === 1 ? "" : "s"} · 50% each)</p>
+            <p className="text-xs text-muted-foreground">− ₦{Math.round(missedOutNaira).toLocaleString()} ({missedOutDays} day{missedOutDays === 1 ? "" : "s"} · 20% each)</p>
           </div>
           <div className="rounded-lg border p-4">
-            <p className="text-xs uppercase text-muted-foreground">Absent</p>
-            <p className="mt-1 text-xl font-bold text-muted-foreground">In payroll</p>
-            <p className="text-xs text-muted-foreground">Counted per full month on Payroll (100% each).</p>
+            <p className="text-xs uppercase text-muted-foreground">Absent ({absentDays} day{absentDays === 1 ? "" : "s"})</p>
+            <p className="mt-1 text-xl font-bold text-destructive">{absentPct}%</p>
+            <p className="text-xs text-muted-foreground">− ₦{Math.round(absentNaira).toLocaleString()} · 100% each · {WORKING_DAYS} working day{WORKING_DAYS === 1 ? "" : "s"} in range</p>
           </div>
           <div className="rounded-lg border p-4 bg-muted/30">
             <p className="text-xs uppercase text-muted-foreground">Total (range)</p>
