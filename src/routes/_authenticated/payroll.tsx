@@ -23,14 +23,16 @@ function Payroll() {
   const { data } = useQuery({
     queryKey: ["payroll", month],
     queryFn: async () => {
-      const [staff, att] = await Promise.all([
+      const [staff, att, hol] = await Promise.all([
         supabase.from("staff").select("id, full_name, department, base_salary, active"),
         supabase.from("attendance").select("staff_id, work_date, clock_in, clock_out, late_minutes, deduction_amount, on_time")
           .gte("work_date", start).lt("work_date", end),
+        supabase.from("holidays").select("work_date").gte("work_date", start).lt("work_date", end),
       ]);
       if (staff.error) throw staff.error;
       if (att.error) throw att.error;
-      return { staff: staff.data, att: att.data };
+      if (hol.error) throw hol.error;
+      return { staff: staff.data, att: att.data, holidays: new Set((hol.data ?? []).map((h) => h.work_date as string)) };
     },
   });
 
