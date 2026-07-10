@@ -88,6 +88,62 @@ export type Database = {
           },
         ]
       }
+      geofence_attempts: {
+        Row: {
+          action: string | null
+          allowed: boolean
+          attempted_at: string
+          department: string | null
+          distance_m: number | null
+          error_message: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          on_site: boolean | null
+          radius_m: number | null
+          staff_id: string | null
+          staff_name: string | null
+        }
+        Insert: {
+          action?: string | null
+          allowed: boolean
+          attempted_at?: string
+          department?: string | null
+          distance_m?: number | null
+          error_message?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          on_site?: boolean | null
+          radius_m?: number | null
+          staff_id?: string | null
+          staff_name?: string | null
+        }
+        Update: {
+          action?: string | null
+          allowed?: boolean
+          attempted_at?: string
+          department?: string | null
+          distance_m?: number | null
+          error_message?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          on_site?: boolean | null
+          radius_m?: number | null
+          staff_id?: string | null
+          staff_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geofence_attempts_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holidays: {
         Row: {
           created_at: string
