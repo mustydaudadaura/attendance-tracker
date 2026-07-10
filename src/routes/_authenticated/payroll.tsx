@@ -95,6 +95,43 @@ function Payroll() {
     net: acc.net + r.netPay,
   }), { salary: 0, deduction: 0, net: 0 });
 
+  const monthLabel = new Date(year, m - 1, 1).toLocaleDateString("en-NG", { month: "long", year: "numeric" });
+
+  function exportCsv() {
+    const headers = ["Staff","Department","Present","Absent","Late days","Late min","Missed out","Base salary","Late %","Absent %","Missed %","Total %","Deduction","Net pay"];
+    const body = rows.map((r) => [
+      r.full_name, r.department, r.daysPresent, r.absentDays, r.lateDays, r.totalLateMinutes,
+      r.missedOutDays, Math.round(Number(r.base_salary)), r.latePct, r.absentPct, r.missedOutPct,
+      r.totalPct, Math.round(r.totalDeduction), Math.round(r.netPay),
+    ]);
+    downloadCsv(`payroll-${month}.csv`, headers, body);
+  }
+
+  function exportPdf() {
+    const doc = buildPdf({
+      title: `Monthly Payroll Deductions — ${monthLabel}`,
+      subtitle: `Working days: ${WORKING_DAYS} (Mon–Fri, holidays excluded)`,
+      meta: [
+        { label: "Total salaries", value: `₦${Math.round(totals.salary).toLocaleString()}` },
+        { label: "Total deductions", value: `₦${Math.round(totals.deduction).toLocaleString()}` },
+        { label: "Total net pay", value: `₦${Math.round(totals.net).toLocaleString()}` },
+        { label: "Generated", value: new Date().toLocaleString("en-NG", { timeZone: "Africa/Lagos" }) },
+      ],
+      tables: [{
+        headers: ["Staff","Dept","Present","Absent","Late","Missed","Base ₦","Total %","Deduction ₦","Net pay ₦"],
+        rows: rows.map((r) => [
+          r.full_name, r.department, r.daysPresent, r.absentDays, r.lateDays, r.missedOutDays,
+          Math.round(Number(r.base_salary)).toLocaleString(),
+          `${r.totalPct}%`,
+          Math.round(r.totalDeduction).toLocaleString(),
+          Math.round(r.netPay).toLocaleString(),
+        ]),
+      }],
+      footer: "Confidential payroll record — Assalam Tahfizul Qur'an Academy Ltd",
+    });
+    savePdf(doc, `payroll-${month}.pdf`);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -102,9 +139,17 @@ function Payroll() {
           <h2 className="text-2xl font-bold">Payroll</h2>
           <p className="text-sm text-muted-foreground">Work week: Monday–Friday, holidays excluded ({WORKING_DAYS} working days this month). Late (after 7:45am) or early sign-out = 5% of daily pay per 5 minutes. Missed sign-out = 20% penalty. Absent weekday (no sign-in) = 100%.</p>
         </div>
-        <div>
-          <Label htmlFor="month">Month</Label>
-          <Input id="month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-48" />
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <Label htmlFor="month">Month</Label>
+            <Input id="month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-48" />
+          </div>
+          <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
+            <FileDown className="mr-2 h-4 w-4" /> CSV
+          </Button>
+          <Button onClick={exportPdf} disabled={rows.length === 0}>
+            <FileText className="mr-2 h-4 w-4" /> PDF
+          </Button>
         </div>
       </div>
 
