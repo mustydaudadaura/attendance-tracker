@@ -14,11 +14,27 @@ function currentMonthLagos() {
 }
 
 function Payroll() {
+  const qc = useQueryClient();
   const [month, setMonth] = useState(currentMonthLagos());
   const [year, m] = month.split("-").map(Number);
   const start = `${year}-${String(m).padStart(2, "0")}-01`;
   const endDate = new Date(year, m, 1); // first of next month
   const end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-01`;
+
+  // Auto-refresh payroll whenever attendance or holidays change anywhere.
+  useEffect(() => {
+    const channel = supabase
+      .channel("payroll-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => {
+        qc.invalidateQueries({ queryKey: ["payroll"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "holidays" }, () => {
+        qc.invalidateQueries({ queryKey: ["payroll"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
 
   const { data } = useQuery({
     queryKey: ["payroll", month],
