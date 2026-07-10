@@ -189,17 +189,17 @@ function Kiosk() {
             </Button>
           </div>
 
-          {isWeekend && (
+          {isClosed && (
             <div className="mt-6 rounded-lg border-2 border-destructive/50 bg-destructive/10 p-4 text-center">
-              <p className="text-base font-bold text-destructive">Kiosk closed — {lagosWeekday}</p>
-              <p className="mt-1 text-sm text-destructive/90">Sign-in and sign-out are disabled on Saturdays and Sundays. Please clock in on the next working day (Monday).</p>
+              <p className="text-base font-bold text-destructive">{closedTitle}</p>
+              <p className="mt-1 text-sm text-destructive/90">{closedMsg}</p>
             </div>
           )}
 
           <div className="mt-6 grid grid-cols-2 gap-3">
             <Button
               className="h-14 text-base bg-success text-success-foreground hover:bg-success/90"
-              disabled={pin.length !== 4 || busy || isWeekend}
+              disabled={pin.length !== 4 || busy || isClosed}
               onClick={() => submit("in")}
             >
               <LogIn className="mr-2 h-5 w-5" /> {busy ? "…" : "Sign In"}
@@ -207,14 +207,14 @@ function Kiosk() {
             <Button
               variant="destructive"
               className="h-14 text-base"
-              disabled={pin.length !== 4 || busy || isWeekend}
+              disabled={pin.length !== 4 || busy || isClosed}
               onClick={() => submit("out")}
             >
               <LogOut className="mr-2 h-5 w-5" /> {busy ? "…" : "Sign Out"}
             </Button>
           </div>
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            {isWeekend ? "Work week is Monday to Friday." : "Enter your 4-digit PIN, then press Sign In or Sign Out."}
+            {isClosed ? "Work week is Monday to Friday (holidays excluded)." : "Enter your 4-digit PIN, then press Sign In or Sign Out."}
           </p>
           <div className="mt-2 space-y-1 text-center text-xs">
             <div className="flex items-center justify-center gap-1.5">
