@@ -366,6 +366,68 @@ function StaffHistoryPage() {
         </Card>
       </div>
 
+      <Card className="p-5">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold">Weekly deduction statement</p>
+            <p className="text-xs text-muted-foreground">Download a per-week summary as proof of deduction for this staff member.</p>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <Label htmlFor="week">Week starting (Monday)</Label>
+              <Input id="week" type="date" value={weekStart}
+                onChange={(e) => setWeekStart(isoMondayOf(e.target.value || defaultTo))} />
+            </div>
+            <Button variant="outline" onClick={downloadWeeklyCsv}>
+              <FileDown className="mr-2 h-4 w-4" /> CSV
+            </Button>
+            <Button onClick={downloadWeeklyPdf}>
+              <FileText className="mr-2 h-4 w-4" /> Download PDF
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2">Day</th>
+                <th className="px-3 py-2">Clock in</th>
+                <th className="px-3 py-2">Clock out</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2 text-right">Late min</th>
+                <th className="px-3 py-2 text-right">Deduction %</th>
+                <th className="px-3 py-2 text-right">Deduction ₦</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weekRows.map((r) => (
+                <tr key={r.date} className="border-t">
+                  <td className="px-3 py-2 font-medium">{r.label}</td>
+                  <td className="px-3 py-2 font-mono">{fmtTime(r.clock_in)}</td>
+                  <td className="px-3 py-2 font-mono">{fmtTime(r.clock_out)}</td>
+                  <td className="px-3 py-2">{r.status}</td>
+                  <td className="px-3 py-2 text-right">{r.late_min || 0}</td>
+                  <td className={"px-3 py-2 text-right " + (r.deduction_pct > 0 ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                    {r.deduction_pct}%
+                  </td>
+                  <td className={"px-3 py-2 text-right " + (r.naira > 0 ? "text-destructive" : "text-muted-foreground")}>
+                    ₦{Math.round(r.naira).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="border-t bg-muted/30 text-sm font-semibold">
+              <tr>
+                <td className="px-3 py-2" colSpan={5}>Week total</td>
+                <td className="px-3 py-2 text-right text-destructive">{weekTotalPct}%</td>
+                <td className="px-3 py-2 text-right text-destructive">₦{Math.round(weekTotalNaira).toLocaleString()}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </Card>
+
       <Card className="p-4">
         <div className="flex flex-wrap items-end gap-4">
           <div>
