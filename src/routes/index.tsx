@@ -31,58 +31,117 @@ type PunchResult = {
 
 type Fix = { lat: number; lng: number; address?: string; at: number };
 
+const FIX_KEY = "kiosk_last_fix";
+const FIX_MAX_AGE_MS = 30 * 60_000; // treat cached fix as usable for 30 minutes
+
+function loadStoredFix(): Fix | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(FIX_KEY);
+    if (!raw) return null;
+    const f = JSON.parse(raw) as Fix;
+    if (!f?.lat || !f?.lng) return null;
+    return f;
+  } catch { return null; }
+}
+function saveStoredFix(f: Fix) {
+  try { window.localStorage.setItem(FIX_KEY, JSON.stringify(f)); } catch { /* ignore */ }
+}
+
 function Kiosk() {
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<PunchResult | null>(null);
   const [now, setNow] = useState(new Date());
-  const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ready" | "denied" | "blocked" | "unsupported">("idle");
+  const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ready" | "cached" | "denied" | "blocked" | "unsupported">("idle");
   const [geoError, setGeoError] = useState<string | null>(null);
   const fixRef = useRef<Fix | null>(null);
+  const watchIdRef = useRef<number | null>(null);
   const inIframe = typeof window !== "undefined" && window.self !== window.top;
 
-  // Prefetch location as soon as the kiosk mounts so submit is instant.
-  const refreshFix = useCallback(() => {
+  const applyFix = useCallback(async (lat: number, lng: number) => {
+    const fix: Fix = { lat, lng, at: Date.now() };
+    fixRef.current = fix;
+    saveStoredFix(fix);
+    setGeoStatus("ready");
     setGeoError(null);
-    if (!("geolocation" in navigator)) { setGeoStatus("unsupported"); return; }
-    setGeoStatus((s) => (s === "ready" ? s : "locating"));
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        fixRef.current = { lat, lng, at: Date.now() };
-        setGeoStatus("ready");
-        try {
-          const r = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=17`,
-            { headers: { "Accept-Language": "en" } },
-          );
-          const j = await r.json();
-          if (j?.display_name && fixRef.current) {
-            fixRef.current = { ...fixRef.current, address: j.display_name as string };
-          }
-        } catch { /* ignore */ }
-      },
-      (err) => {
-        // code 1 = PERMISSION_DENIED. Distinguish policy-blocked (iframe) vs user-denied.
-        const policyBlocked = /permissions policy|disabled in this document/i.test(err.message);
-        if (err.code === 1 && policyBlocked) {
-          setGeoStatus("blocked");
-          setGeoError("Location is disabled in this preview window. Open the published kiosk URL and allow location.");
-        } else if (err.code === 1) {
-          setGeoStatus("denied");
-          setGeoError("Permission denied. Tap the lock icon in the address bar and allow Location.");
-        } else {
-          setGeoStatus("denied");
-          setGeoError(err.message || "Could not get location. Check GPS / location services.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
-    );
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=17`,
+        { headers: { "Accept-Language": "en" } },
+      );
+      const j = await r.json();
+      if (j?.display_name && fixRef.current) {
+        fixRef.current = { ...fixRef.current, address: j.display_name as string };
+        saveStoredFix(fixRef.current);
+      }
+    } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => { refreshFix(); }, [refreshFix]);
+  const handleGeoError = useCallback((err: GeolocationPositionError) => {
+    const policyBlocked = /permissions policy|disabled in this document/i.test(err.message);
+    if (err.code === 1 && policyBlocked) {
+      setGeoStatus("blocked");
+      setGeoError("Location is disabled in this window. Open the published kiosk URL and allow location.");
+    } else if (err.code === 1) {
+      setGeoStatus("denied");
+      setGeoError("Permission denied. Tap the lock icon in the address bar and allow Location.");
+    } else if (fixRef.current && Date.now() - fixRef.current.at < FIX_MAX_AGE_MS) {
+      // We have a recent cached fix — keep using it and don't scare the user.
+      setGeoStatus("cached");
+      setGeoError(null);
+    } else {
+      setGeoStatus("denied");
+      setGeoError(err.message || "Could not get a fresh location. Using last known if available.");
+    }
+  }, []);
 
+  // Prefetch + keep-fresh via watchPosition; falls back to low-accuracy request.
+  const refreshFix = useCallback(() => {
+    if (!("geolocation" in navigator)) { setGeoStatus("unsupported"); return; }
+    setGeoStatus((s) => (s === "ready" || s === "cached" ? s : "locating"));
+
+    // 1) One quick high-accuracy attempt.
+    navigator.geolocation.getCurrentPosition(
+      (pos) => applyFix(pos.coords.latitude, pos.coords.longitude),
+      () => {
+        // 2) Retry with relaxed accuracy & longer timeout — works indoors / weak GPS.
+        navigator.geolocation.getCurrentPosition(
+          (pos) => applyFix(pos.coords.latitude, pos.coords.longitude),
+          handleGeoError,
+          { enableHighAccuracy: false, timeout: 20_000, maximumAge: 5 * 60_000 },
+        );
+      },
+      { enableHighAccuracy: true, timeout: 8_000, maximumAge: 60_000 },
+    );
+
+    // 3) Also keep a watcher so the fix stays fresh in the background.
+    if (watchIdRef.current == null) {
+      try {
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (pos) => applyFix(pos.coords.latitude, pos.coords.longitude),
+          handleGeoError,
+          { enableHighAccuracy: true, timeout: 20_000, maximumAge: 60_000 },
+        );
+      } catch { /* ignore */ }
+    }
+  }, [applyFix, handleGeoError]);
+
+  // Hydrate from localStorage so the kiosk starts "ready" even before a fresh fix.
+  useEffect(() => {
+    const cached = loadStoredFix();
+    if (cached) {
+      fixRef.current = cached;
+      setGeoStatus(Date.now() - cached.at < FIX_MAX_AGE_MS ? "cached" : "locating");
+    }
+    refreshFix();
+    return () => {
+      if (watchIdRef.current != null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, [refreshFix]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -94,6 +153,7 @@ function Kiosk() {
     const t = setTimeout(() => { setResult(null); setPin(""); refreshFix(); }, 8000);
     return () => clearTimeout(t);
   }, [result, refreshFix]);
+
 
   async function submit(intent: "in" | "out") {
     if (pin.length !== 4 || busy) return;
