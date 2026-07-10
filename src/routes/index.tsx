@@ -215,6 +215,24 @@ function Kiosk() {
     ? "Sign-in and sign-out are disabled today. Enjoy the holiday!"
     : "Sign-in and sign-out are disabled on Saturdays and Sundays. Please clock in on the next working day (Monday).";
 
+  const { data: site } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => {
+      const { data } = await supabase.from("site_settings")
+        .select("site_lat, site_lng, radius_meters, site_label").eq("id", true).maybeSingle();
+      return (data ?? null) as SiteSettings | null;
+    },
+    refetchInterval: 5 * 60_000,
+  });
+
+  const geofenceEnabled = !!(site && site.site_lat != null && site.site_lng != null);
+  const currentFix = fixRef.current;
+  const distanceM = geofenceEnabled && currentFix
+    ? distanceMeters(currentFix.lat, currentFix.lng, site!.site_lat!, site!.site_lng!)
+    : null;
+  const onSite = distanceM != null ? distanceM <= site!.radius_meters : null;
+  const geofenceBlocks = geofenceEnabled && (onSite === false || (onSite === null && (geoStatus === "denied" || geoStatus === "blocked" || geoStatus === "unsupported")));
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b bg-primary text-primary-foreground">
