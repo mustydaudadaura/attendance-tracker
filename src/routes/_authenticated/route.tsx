@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, Wallet, LogOut, MonitorSmartphone } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, LogOut, MonitorSmartphone, CalendarOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -27,6 +27,7 @@ function AdminLayout() {
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/staff", label: "Staff", icon: Users },
     { to: "/payroll", label: "Payroll", icon: Wallet },
+    { to: "/holidays", label: "Holidays", icon: CalendarOff },
   ] as const;
 
   return (

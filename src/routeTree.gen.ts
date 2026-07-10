@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
 import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
+import { Route as AuthenticatedHolidaysRouteImport } from './routes/_authenticated/holidays'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedStaffStaffIdRouteImport } from './routes/_authenticated/staff.$staffId'
 
@@ -41,6 +42,11 @@ const AuthenticatedPayrollRoute = AuthenticatedPayrollRouteImport.update({
   path: '/payroll',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHolidaysRoute = AuthenticatedHolidaysRouteImport.update({
+  id: '/holidays',
+  path: '/holidays',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/holidays': typeof AuthenticatedHolidaysRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/staff': typeof AuthenticatedStaffRouteWithChildren
   '/staff/$staffId': typeof AuthenticatedStaffStaffIdRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/holidays': typeof AuthenticatedHolidaysRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/staff': typeof AuthenticatedStaffRouteWithChildren
   '/staff/$staffId': typeof AuthenticatedStaffStaffIdRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/holidays': typeof AuthenticatedHolidaysRoute
   '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRouteWithChildren
   '/_authenticated/staff/$staffId': typeof AuthenticatedStaffStaffIdRoute
@@ -85,17 +94,26 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/holidays'
     | '/payroll'
     | '/staff'
     | '/staff/$staffId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/payroll' | '/staff' | '/staff/$staffId'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/holidays'
+    | '/payroll'
+    | '/staff'
+    | '/staff/$staffId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/holidays'
     | '/_authenticated/payroll'
     | '/_authenticated/staff'
     | '/_authenticated/staff/$staffId'
@@ -144,6 +162,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPayrollRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/holidays': {
+      id: '/_authenticated/holidays'
+      path: '/holidays'
+      fullPath: '/holidays'
+      preLoaderRoute: typeof AuthenticatedHolidaysRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -174,12 +199,14 @@ const AuthenticatedStaffRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedHolidaysRoute: typeof AuthenticatedHolidaysRoute
   AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedHolidaysRoute: AuthenticatedHolidaysRoute,
   AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRouteWithChildren,
 }

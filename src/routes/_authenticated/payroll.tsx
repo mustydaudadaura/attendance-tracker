@@ -23,27 +23,31 @@ function Payroll() {
   const { data } = useQuery({
     queryKey: ["payroll", month],
     queryFn: async () => {
-      const [staff, att] = await Promise.all([
+      const [staff, att, hol] = await Promise.all([
         supabase.from("staff").select("id, full_name, department, base_salary, active"),
         supabase.from("attendance").select("staff_id, work_date, clock_in, clock_out, late_minutes, deduction_amount, on_time")
           .gte("work_date", start).lt("work_date", end),
+        supabase.from("holidays").select("work_date").gte("work_date", start).lt("work_date", end),
       ]);
       if (staff.error) throw staff.error;
       if (att.error) throw att.error;
-      return { staff: staff.data, att: att.data };
+      if (hol.error) throw hol.error;
+      return { staff: staff.data, att: att.data, holidays: new Set((hol.data ?? []).map((h) => h.work_date as string)) };
     },
   });
 
   // Count Mon-Fri working days in the selected month up to today (Lagos)
   const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const holidaySet = data?.holidays ?? new Set<string>();
   let workingDaysElapsed = 0;
   let totalWorkingDays = 0;
   for (let d = 1; d <= new Date(year, m, 0).getDate(); d++) {
     const dt = new Date(year, m - 1, d);
     const dow = dt.getDay(); // 0=Sun, 6=Sat
     if (dow === 0 || dow === 6) continue;
-    totalWorkingDays++;
     const iso = `${year}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    if (holidaySet.has(iso)) continue;
+    totalWorkingDays++;
     if (iso <= todayStr) workingDaysElapsed++;
   }
   const WORKING_DAYS = totalWorkingDays || 22;
@@ -77,7 +81,7 @@ function Payroll() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Payroll</h2>
-          <p className="text-sm text-muted-foreground">Work week: Monday–Friday ({WORKING_DAYS} working days this month). Late (after 7:45am) or early sign-out = 5% of daily pay per 5 minutes. Missed sign-out = 20% penalty. Absent weekday (no sign-in) = 100%.</p>
+          <p className="text-sm text-muted-foreground">Work week: Monday–Friday, holidays excluded ({WORKING_DAYS} working days this month). Late (after 7:45am) or early sign-out = 5% of daily pay per 5 minutes. Missed sign-out = 20% penalty. Absent weekday (no sign-in) = 100%.</p>
         </div>
         <div>
           <Label htmlFor="month">Month</Label>
