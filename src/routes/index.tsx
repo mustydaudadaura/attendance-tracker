@@ -280,24 +280,25 @@ function Kiosk() {
             <div className="flex items-center justify-center gap-1.5">
               <MapPin className={cn(
                 "h-3.5 w-3.5",
-                geoStatus === "ready" && "text-success",
+                (geoStatus === "ready" || geoStatus === "cached") && "text-success",
                 (geoStatus === "denied" || geoStatus === "blocked" || geoStatus === "unsupported") && "text-destructive",
                 (geoStatus === "locating" || geoStatus === "idle") && "text-muted-foreground",
               )} />
               <span className={cn(
-                geoStatus === "ready" && "text-success",
+                (geoStatus === "ready" || geoStatus === "cached") && "text-success",
                 (geoStatus === "denied" || geoStatus === "blocked" || geoStatus === "unsupported") && "text-destructive font-medium",
                 (geoStatus === "locating" || geoStatus === "idle") && "text-muted-foreground",
               )}>
                 {geoStatus === "ready" && "Location ready"}
+                {geoStatus === "cached" && "Location ready (last known)"}
                 {geoStatus === "locating" && "Getting location…"}
-                {geoStatus === "denied" && "Location permission denied"}
+                {geoStatus === "denied" && "Location unavailable — you can still sign in"}
                 {geoStatus === "blocked" && "Location blocked in preview"}
-                {geoStatus === "unsupported" && "This device has no GPS"}
-                {geoStatus === "idle" && "Location required"}
+                {geoStatus === "unsupported" && "This device has no GPS — you can still sign in"}
+                {geoStatus === "idle" && "Preparing location…"}
               </span>
-              {(geoStatus === "denied" || geoStatus === "blocked") && (
-                <button type="button" onClick={refreshFix} className="ml-1 underline">retry</button>
+              {(geoStatus === "denied" || geoStatus === "blocked" || geoStatus === "cached") && (
+                <button type="button" onClick={refreshFix} className="ml-1 underline">refresh</button>
               )}
             </div>
             {geoError && (
