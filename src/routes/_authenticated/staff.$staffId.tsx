@@ -90,20 +90,54 @@ function StaffHistoryPage() {
     },
   });
 
-  const WORKING_DAYS_PER_MONTH = 22;
-  const MISSED_OUT_PCT = 50;
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const dailyPay = Number(staff?.base_salary ?? 0) / WORKING_DAYS_PER_MONTH;
+  const { data: holidayRows = [] } = useQuery({
+    queryKey: ["holidays", from, to],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("holidays")
+        .select("work_date")
+        .gte("work_date", from)
+        .lte("work_date", to);
+      if (error) throw error;
+      return data as { work_date: string }[];
+    },
+  });
+  const holidaySet = new Set(holidayRows.map((h) => h.work_date));
+
+  const MISSED_OUT_PCT = 20;
+  const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+
+  // Working days in the selected range = Mon–Fri minus holidays
+  let workingDaysInRange = 0;
+  let workingDaysElapsed = 0;
+  if (from && to) {
+    const start = new Date(from + "T00:00:00");
+    const end = new Date(to + "T00:00:00");
+    for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+      const dow = dt.getDay();
+      if (dow === 0 || dow === 6) continue;
+      const iso = dt.toISOString().slice(0, 10);
+      if (holidaySet.has(iso)) continue;
+      workingDaysInRange++;
+      if (iso <= todayIso) workingDaysElapsed++;
+    }
+  }
+  const WORKING_DAYS = workingDaysInRange || 22;
+
+  const dailyPay = Number(staff?.base_salary ?? 0) / WORKING_DAYS;
   const rowDeductionNaira = (r: Attendance) => (dailyPay * Number(r.deduction_amount || 0)) / 100;
   const latePct = rows.reduce((sum, r) => sum + Number(r.deduction_amount || 0), 0);
   const missedOutDays = rows.filter((r) => r.clock_in && !r.clock_out && r.work_date < todayIso).length;
   const missedOutPct = missedOutDays * MISSED_OUT_PCT;
   const missedOutNaira = (dailyPay * missedOutPct) / 100;
-  const totalDeductionPct = latePct + missedOutPct;
-  const totalDeduction = rows.reduce((sum, r) => sum + rowDeductionNaira(r), 0) + missedOutNaira;
-  const lateNaira = rows.reduce((sum, r) => sum + rowDeductionNaira(r), 0);
-  const lateDays = rows.filter((r) => !r.on_time).length;
   const presentDays = rows.filter((r) => r.clock_in).length;
+  const absentDays = Math.max(0, workingDaysElapsed - presentDays);
+  const absentPct = absentDays * 100;
+  const absentNaira = (dailyPay * absentPct) / 100;
+  const totalDeductionPct = latePct + missedOutPct + absentPct;
+  const lateNaira = rows.reduce((sum, r) => sum + rowDeductionNaira(r), 0);
+  const totalDeduction = Math.min(Number(staff?.base_salary ?? 0), lateNaira + missedOutNaira + absentNaira);
+  const lateDays = rows.filter((r) => !r.on_time).length;
   const netPay = Math.max(0, Number(staff?.base_salary ?? 0) - totalDeduction);
 
   const STAFF_PALETTE = [
