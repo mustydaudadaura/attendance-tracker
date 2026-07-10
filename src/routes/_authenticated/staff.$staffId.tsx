@@ -7,10 +7,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, FileDown } from "lucide-react";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
+import { downloadCsv, buildPdf, savePdf } from "@/lib/exports";
+
+// Return ISO Monday of the week containing d (yyyy-mm-dd)
+function isoMondayOf(dateIso: string) {
+  const d = new Date(dateIso + "T00:00:00");
+  const dow = d.getDay(); // 0=Sun..6=Sat
+  const diff = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+function addDaysIso(iso: string, days: number) {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 export const Route = createFileRoute("/_authenticated/staff/$staffId")({
   component: StaffHistoryPage,
@@ -65,6 +80,7 @@ function StaffHistoryPage() {
   const { staffId } = useParams({ from: "/_authenticated/staff/$staffId" });
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
+  const [weekStart, setWeekStart] = useState<string>(isoMondayOf(defaultTo));
 
   const { data: staff } = useQuery({
     queryKey: ["staff", staffId],
@@ -148,6 +164,86 @@ function StaffHistoryPage() {
   const staffColor = STAFF_PALETTE[
     staffId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) % STAFF_PALETTE.length
   ];
+
+  // Weekly summary (Mon–Fri of selected week)
+  const weekEnd = addDaysIso(weekStart, 6);
+  const weekDailyPay = Number(staff?.base_salary ?? 0) / 5; // 5 weekday base
+  const weekRows: Array<{ date: string; label: string; clock_in: string | null; clock_out: string | null; status: string; late_min: number; deduction_pct: number; naira: number }> = [];
+  let weekTotalPct = 0;
+  let weekTotalNaira = 0;
+  for (let i = 0; i < 5; i++) {
+    const iso = addDaysIso(weekStart, i);
+    const isHoliday = holidaySet.has(iso);
+    const rec = rows.find((r) => r.work_date === iso);
+    let pct = 0;
+    let status = "—";
+    if (isHoliday) {
+      status = "Holiday";
+    } else if (iso > todayIso) {
+      status = "Upcoming";
+    } else if (!rec || !rec.clock_in) {
+      status = "Absent";
+      pct = 100;
+    } else if (!rec.clock_out) {
+      status = "Missed clock-out";
+      pct = Number(rec.deduction_amount || 0) + MISSED_OUT_PCT;
+    } else if (rec.on_time) {
+      status = "On time";
+      pct = Number(rec.deduction_amount || 0);
+    } else {
+      status = "Late";
+      pct = Number(rec.deduction_amount || 0);
+    }
+    const naira = (weekDailyPay * pct) / 100;
+    weekTotalPct += pct;
+    weekTotalNaira += naira;
+    weekRows.push({
+      date: iso,
+      label: new Date(iso + "T00:00:00").toLocaleDateString("en-NG", { weekday: "short", day: "2-digit", month: "short" }),
+      clock_in: rec?.clock_in ?? null,
+      clock_out: rec?.clock_out ?? null,
+      status,
+      late_min: rec?.late_minutes ?? 0,
+      deduction_pct: pct,
+      naira,
+    });
+  }
+  const weekLabel = `Week of ${new Date(weekStart + "T00:00:00").toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })} to ${new Date(weekEnd + "T00:00:00").toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })}`;
+
+  function weeklyHeaders() {
+    return ["Date", "Clock in", "Clock out", "Status", "Late min", "Deduction %", "Deduction ₦"];
+  }
+  function weeklyBody() {
+    return weekRows.map((r) => [
+      r.label,
+      r.clock_in ? new Date(r.clock_in).toLocaleTimeString("en-NG", { timeZone: "Africa/Lagos", hour: "2-digit", minute: "2-digit" }) : "—",
+      r.clock_out ? new Date(r.clock_out).toLocaleTimeString("en-NG", { timeZone: "Africa/Lagos", hour: "2-digit", minute: "2-digit" }) : "—",
+      r.status,
+      r.late_min,
+      `${r.deduction_pct}%`,
+      Math.round(r.naira).toLocaleString(),
+    ]);
+  }
+  function downloadWeeklyCsv() {
+    downloadCsv(`${staff?.full_name ?? "staff"}-week-${weekStart}.csv`, weeklyHeaders(), weeklyBody());
+  }
+  function downloadWeeklyPdf() {
+    const doc = buildPdf({
+      title: `Weekly Deduction Statement — ${staff?.full_name ?? ""}`,
+      subtitle: weekLabel,
+      meta: [
+        { label: "Department", value: String(staff?.department ?? "") },
+        { label: "PIN", value: String(staff?.pin ?? "") },
+        { label: "Base salary", value: `₦${Number(staff?.base_salary ?? 0).toLocaleString()}` },
+        { label: "Daily pay (Mon–Fri)", value: `₦${Math.round(weekDailyPay).toLocaleString()}` },
+        { label: "Total deduction %", value: `${weekTotalPct}%` },
+        { label: "Total deduction ₦", value: `₦${Math.round(weekTotalNaira).toLocaleString()}` },
+      ],
+      tables: [{ headers: weeklyHeaders(), rows: weeklyBody() }],
+      footer: `Staff acknowledgement: __________________________   Admin: __________________________   Generated ${new Date().toLocaleString("en-NG", { timeZone: "Africa/Lagos" })}`,
+    });
+    savePdf(doc, `${(staff?.full_name ?? "staff").replace(/\s+/g, "_")}-week-${weekStart}.pdf`);
+  }
 
   return (
     <div className="space-y-6">
@@ -269,6 +365,68 @@ function StaffHistoryPage() {
           )}
         </Card>
       </div>
+
+      <Card className="p-5">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold">Weekly deduction statement</p>
+            <p className="text-xs text-muted-foreground">Download a per-week summary as proof of deduction for this staff member.</p>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <Label htmlFor="week">Week starting (Monday)</Label>
+              <Input id="week" type="date" value={weekStart}
+                onChange={(e) => setWeekStart(isoMondayOf(e.target.value || defaultTo))} />
+            </div>
+            <Button variant="outline" onClick={downloadWeeklyCsv}>
+              <FileDown className="mr-2 h-4 w-4" /> CSV
+            </Button>
+            <Button onClick={downloadWeeklyPdf}>
+              <FileText className="mr-2 h-4 w-4" /> Download PDF
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2">Day</th>
+                <th className="px-3 py-2">Clock in</th>
+                <th className="px-3 py-2">Clock out</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2 text-right">Late min</th>
+                <th className="px-3 py-2 text-right">Deduction %</th>
+                <th className="px-3 py-2 text-right">Deduction ₦</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weekRows.map((r) => (
+                <tr key={r.date} className="border-t">
+                  <td className="px-3 py-2 font-medium">{r.label}</td>
+                  <td className="px-3 py-2 font-mono">{fmtTime(r.clock_in)}</td>
+                  <td className="px-3 py-2 font-mono">{fmtTime(r.clock_out)}</td>
+                  <td className="px-3 py-2">{r.status}</td>
+                  <td className="px-3 py-2 text-right">{r.late_min || 0}</td>
+                  <td className={"px-3 py-2 text-right " + (r.deduction_pct > 0 ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                    {r.deduction_pct}%
+                  </td>
+                  <td className={"px-3 py-2 text-right " + (r.naira > 0 ? "text-destructive" : "text-muted-foreground")}>
+                    ₦{Math.round(r.naira).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="border-t bg-muted/30 text-sm font-semibold">
+              <tr>
+                <td className="px-3 py-2" colSpan={5}>Week total</td>
+                <td className="px-3 py-2 text-right text-destructive">{weekTotalPct}%</td>
+                <td className="px-3 py-2 text-right text-destructive">₦{Math.round(weekTotalNaira).toLocaleString()}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </Card>
 
       <Card className="p-4">
         <div className="flex flex-wrap items-end gap-4">
