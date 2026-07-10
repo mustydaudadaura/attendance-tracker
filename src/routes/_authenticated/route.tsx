@@ -27,6 +27,7 @@ function AdminLayout() {
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/staff", label: "Staff", icon: Users },
     { to: "/payroll", label: "Payroll", icon: Wallet },
+    { to: "/holidays", label: "Holidays", icon: CalendarOff },
   ] as const;
 
   return (
