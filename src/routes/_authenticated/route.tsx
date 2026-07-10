@@ -28,6 +28,7 @@ function AdminLayout() {
     { to: "/staff", label: "Staff", icon: Users },
     { to: "/payroll", label: "Payroll", icon: Wallet },
     { to: "/holidays", label: "Holidays", icon: CalendarOff },
+    { to: "/geofence-audit", label: "Geofence audit", icon: ShieldAlert },
     { to: "/settings", label: "Settings", icon: Settings },
   ] as const;
 
