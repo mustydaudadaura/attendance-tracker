@@ -127,6 +127,8 @@ function Kiosk() {
 
   const late = result?.ok && result.on_time === false;
   const good = result?.ok && result.on_time === true;
+  const lagosWeekday = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Lagos", weekday: "long" }).format(now);
+  const isWeekend = lagosWeekday === "Saturday" || lagosWeekday === "Sunday";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
