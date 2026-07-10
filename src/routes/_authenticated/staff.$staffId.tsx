@@ -80,6 +80,7 @@ function StaffHistoryPage() {
   const { staffId } = useParams({ from: "/_authenticated/staff/$staffId" });
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
+  const [weekStart, setWeekStart] = useState<string>(isoMondayOf(defaultTo));
 
   const { data: staff } = useQuery({
     queryKey: ["staff", staffId],
