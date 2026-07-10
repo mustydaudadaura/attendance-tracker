@@ -30,9 +30,19 @@ type PunchResult = {
 };
 
 type Fix = { lat: number; lng: number; address?: string; at: number };
+type SiteSettings = { site_lat: number | null; site_lng: number | null; radius_meters: number; site_label: string };
 
 const FIX_KEY = "kiosk_last_fix";
 const FIX_MAX_AGE_MS = 30 * 60_000; // treat cached fix as usable for 30 minutes
+
+function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function loadStoredFix(): Fix | null {
   if (typeof window === "undefined") return null;
@@ -205,6 +215,24 @@ function Kiosk() {
     ? "Sign-in and sign-out are disabled today. Enjoy the holiday!"
     : "Sign-in and sign-out are disabled on Saturdays and Sundays. Please clock in on the next working day (Monday).";
 
+  const { data: site } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => {
+      const { data } = await supabase.from("site_settings")
+        .select("site_lat, site_lng, radius_meters, site_label").eq("id", true).maybeSingle();
+      return (data ?? null) as SiteSettings | null;
+    },
+    refetchInterval: 5 * 60_000,
+  });
+
+  const geofenceEnabled = !!(site && site.site_lat != null && site.site_lng != null);
+  const currentFix = fixRef.current;
+  const distanceM = geofenceEnabled && currentFix
+    ? distanceMeters(currentFix.lat, currentFix.lng, site!.site_lat!, site!.site_lng!)
+    : null;
+  const onSite = distanceM != null ? distanceM <= site!.radius_meters : null;
+  const geofenceBlocks = geofenceEnabled && (onSite === false || (onSite === null && (geoStatus === "denied" || geoStatus === "blocked" || geoStatus === "unsupported")));
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b bg-primary text-primary-foreground">
@@ -256,10 +284,29 @@ function Kiosk() {
             </div>
           )}
 
+          {!isClosed && geofenceEnabled && (
+            <div className={cn(
+              "mt-6 rounded-lg border-2 p-3 text-center text-sm",
+              onSite === true && "border-success/50 bg-success/10 text-success",
+              onSite === false && "border-destructive/50 bg-destructive/10 text-destructive",
+              onSite === null && "border-muted bg-muted/40 text-muted-foreground",
+            )}>
+              {onSite === true && (
+                <p><strong>On-site at {site!.site_label}</strong> · {Math.round(distanceM!)}m from center (allowed: {site!.radius_meters}m)</p>
+              )}
+              {onSite === false && (
+                <p><strong>Off-site.</strong> You are {Math.round(distanceM!)}m from {site!.site_label}. Move within {site!.radius_meters}m to clock in.</p>
+              )}
+              {onSite === null && (
+                <p>Waiting for location to verify you are within {site!.radius_meters}m of {site!.site_label}…</p>
+              )}
+            </div>
+          )}
+
           <div className="mt-6 grid grid-cols-2 gap-3">
             <Button
               className="h-14 text-base bg-success text-success-foreground hover:bg-success/90"
-              disabled={pin.length !== 4 || busy || isClosed}
+              disabled={pin.length !== 4 || busy || isClosed || geofenceBlocks}
               onClick={() => submit("in")}
             >
               <LogIn className="mr-2 h-5 w-5" /> {busy ? "…" : "Sign In"}
@@ -267,7 +314,7 @@ function Kiosk() {
             <Button
               variant="destructive"
               className="h-14 text-base"
-              disabled={pin.length !== 4 || busy || isClosed}
+              disabled={pin.length !== 4 || busy || isClosed || geofenceBlocks}
               onClick={() => submit("out")}
             >
               <LogOut className="mr-2 h-5 w-5" /> {busy ? "…" : "Sign Out"}
