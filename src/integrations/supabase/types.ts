@@ -18,12 +18,16 @@ export type Database = {
         Row: {
           clock_in: string | null
           clock_in_address: string | null
+          clock_in_distance_m: number | null
           clock_in_lat: number | null
           clock_in_lng: number | null
+          clock_in_on_site: boolean | null
           clock_out: string | null
           clock_out_address: string | null
+          clock_out_distance_m: number | null
           clock_out_lat: number | null
           clock_out_lng: number | null
+          clock_out_on_site: boolean | null
           created_at: string
           deduction_amount: number
           id: string
@@ -35,12 +39,16 @@ export type Database = {
         Insert: {
           clock_in?: string | null
           clock_in_address?: string | null
+          clock_in_distance_m?: number | null
           clock_in_lat?: number | null
           clock_in_lng?: number | null
+          clock_in_on_site?: boolean | null
           clock_out?: string | null
           clock_out_address?: string | null
+          clock_out_distance_m?: number | null
           clock_out_lat?: number | null
           clock_out_lng?: number | null
+          clock_out_on_site?: boolean | null
           created_at?: string
           deduction_amount?: number
           id?: string
@@ -52,12 +60,16 @@ export type Database = {
         Update: {
           clock_in?: string | null
           clock_in_address?: string | null
+          clock_in_distance_m?: number | null
           clock_in_lat?: number | null
           clock_in_lng?: number | null
+          clock_in_on_site?: boolean | null
           clock_out?: string | null
           clock_out_address?: string | null
+          clock_out_distance_m?: number | null
           clock_out_lat?: number | null
           clock_out_lng?: number | null
+          clock_out_on_site?: boolean | null
           created_at?: string
           deduction_amount?: number
           id?: string
@@ -91,6 +103,33 @@ export type Database = {
           created_at?: string
           label?: string
           work_date?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          id: boolean
+          radius_meters: number
+          site_label: string
+          site_lat: number | null
+          site_lng: number | null
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          radius_meters?: number
+          site_label?: string
+          site_lat?: number | null
+          site_lng?: number | null
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          radius_meters?: number
+          site_label?: string
+          site_lat?: number | null
+          site_lng?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -166,6 +205,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      haversine_m: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
       }
       punch_clock:
         | { Args: { p_pin: string }; Returns: Json }
