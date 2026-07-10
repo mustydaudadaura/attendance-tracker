@@ -165,6 +165,86 @@ function StaffHistoryPage() {
     staffId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) % STAFF_PALETTE.length
   ];
 
+  // Weekly summary (Mon–Fri of selected week)
+  const weekEnd = addDaysIso(weekStart, 6);
+  const weekDailyPay = Number(staff?.base_salary ?? 0) / 5; // 5 weekday base
+  const weekRows: Array<{ date: string; label: string; clock_in: string | null; clock_out: string | null; status: string; late_min: number; deduction_pct: number; naira: number }> = [];
+  let weekTotalPct = 0;
+  let weekTotalNaira = 0;
+  for (let i = 0; i < 5; i++) {
+    const iso = addDaysIso(weekStart, i);
+    const isHoliday = holidaySet.has(iso);
+    const rec = rows.find((r) => r.work_date === iso);
+    let pct = 0;
+    let status = "—";
+    if (isHoliday) {
+      status = "Holiday";
+    } else if (iso > todayIso) {
+      status = "Upcoming";
+    } else if (!rec || !rec.clock_in) {
+      status = "Absent";
+      pct = 100;
+    } else if (!rec.clock_out) {
+      status = "Missed clock-out";
+      pct = Number(rec.deduction_amount || 0) + MISSED_OUT_PCT;
+    } else if (rec.on_time) {
+      status = "On time";
+      pct = Number(rec.deduction_amount || 0);
+    } else {
+      status = "Late";
+      pct = Number(rec.deduction_amount || 0);
+    }
+    const naira = (weekDailyPay * pct) / 100;
+    weekTotalPct += pct;
+    weekTotalNaira += naira;
+    weekRows.push({
+      date: iso,
+      label: new Date(iso + "T00:00:00").toLocaleDateString("en-NG", { weekday: "short", day: "2-digit", month: "short" }),
+      clock_in: rec?.clock_in ?? null,
+      clock_out: rec?.clock_out ?? null,
+      status,
+      late_min: rec?.late_minutes ?? 0,
+      deduction_pct: pct,
+      naira,
+    });
+  }
+  const weekLabel = `Week of ${new Date(weekStart + "T00:00:00").toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })} to ${new Date(weekEnd + "T00:00:00").toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })}`;
+
+  function weeklyHeaders() {
+    return ["Date", "Clock in", "Clock out", "Status", "Late min", "Deduction %", "Deduction ₦"];
+  }
+  function weeklyBody() {
+    return weekRows.map((r) => [
+      r.label,
+      r.clock_in ? new Date(r.clock_in).toLocaleTimeString("en-NG", { timeZone: "Africa/Lagos", hour: "2-digit", minute: "2-digit" }) : "—",
+      r.clock_out ? new Date(r.clock_out).toLocaleTimeString("en-NG", { timeZone: "Africa/Lagos", hour: "2-digit", minute: "2-digit" }) : "—",
+      r.status,
+      r.late_min,
+      `${r.deduction_pct}%`,
+      Math.round(r.naira).toLocaleString(),
+    ]);
+  }
+  function downloadWeeklyCsv() {
+    downloadCsv(`${staff?.full_name ?? "staff"}-week-${weekStart}.csv`, weeklyHeaders(), weeklyBody());
+  }
+  function downloadWeeklyPdf() {
+    const doc = buildPdf({
+      title: `Weekly Deduction Statement — ${staff?.full_name ?? ""}`,
+      subtitle: weekLabel,
+      meta: [
+        { label: "Department", value: String(staff?.department ?? "") },
+        { label: "PIN", value: String(staff?.pin ?? "") },
+        { label: "Base salary", value: `₦${Number(staff?.base_salary ?? 0).toLocaleString()}` },
+        { label: "Daily pay (Mon–Fri)", value: `₦${Math.round(weekDailyPay).toLocaleString()}` },
+        { label: "Total deduction %", value: `${weekTotalPct}%` },
+        { label: "Total deduction ₦", value: `₦${Math.round(weekTotalNaira).toLocaleString()}` },
+      ],
+      tables: [{ headers: weeklyHeaders(), rows: weeklyBody() }],
+      footer: `Staff acknowledgement: __________________________   Admin: __________________________   Generated ${new Date().toLocaleString("en-NG", { timeZone: "Africa/Lagos" })}`,
+    });
+    savePdf(doc, `${(staff?.full_name ?? "staff").replace(/\s+/g, "_")}-week-${weekStart}.pdf`);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
