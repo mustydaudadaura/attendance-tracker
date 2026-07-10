@@ -129,6 +129,21 @@ function Kiosk() {
   const good = result?.ok && result.on_time === true;
   const lagosWeekday = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Lagos", weekday: "long" }).format(now);
   const isWeekend = lagosWeekday === "Saturday" || lagosWeekday === "Sunday";
+  const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  const { data: holiday } = useQuery({
+    queryKey: ["holiday", todayIso],
+    queryFn: async () => {
+      const { data } = await supabase.from("holidays").select("label").eq("work_date", todayIso).maybeSingle();
+      return data as { label: string } | null;
+    },
+    refetchInterval: 5 * 60_000,
+  });
+  const isHoliday = !!holiday;
+  const isClosed = isWeekend || isHoliday;
+  const closedTitle = isHoliday ? `Holiday — ${holiday!.label}` : `Kiosk closed — ${lagosWeekday}`;
+  const closedMsg = isHoliday
+    ? "Sign-in and sign-out are disabled today. Enjoy the holiday!"
+    : "Sign-in and sign-out are disabled on Saturdays and Sundays. Please clock in on the next working day (Monday).";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
