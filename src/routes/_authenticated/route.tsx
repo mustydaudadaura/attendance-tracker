@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, Wallet, LogOut, MonitorSmartphone, CalendarOff } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, LogOut, MonitorSmartphone, CalendarOff, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
