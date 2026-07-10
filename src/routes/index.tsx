@@ -174,7 +174,6 @@ function Kiosk() {
             </Button>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3">
           {isWeekend && (
             <div className="mt-6 rounded-lg border-2 border-destructive/50 bg-destructive/10 p-4 text-center">
               <p className="text-base font-bold text-destructive">Kiosk closed — {lagosWeekday}</p>
