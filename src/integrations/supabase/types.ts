@@ -76,6 +76,24 @@ export type Database = {
           },
         ]
       }
+      holidays: {
+        Row: {
+          created_at: string
+          label: string
+          work_date: string
+        }
+        Insert: {
+          created_at?: string
+          label?: string
+          work_date: string
+        }
+        Update: {
+          created_at?: string
+          label?: string
+          work_date?: string
+        }
+        Relationships: []
+      }
       staff: {
         Row: {
           active: boolean
