@@ -38,14 +38,16 @@ function Payroll() {
 
   // Count Mon-Fri working days in the selected month up to today (Lagos)
   const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const holidaySet = data?.holidays ?? new Set<string>();
   let workingDaysElapsed = 0;
   let totalWorkingDays = 0;
   for (let d = 1; d <= new Date(year, m, 0).getDate(); d++) {
     const dt = new Date(year, m - 1, d);
     const dow = dt.getDay(); // 0=Sun, 6=Sat
     if (dow === 0 || dow === 6) continue;
-    totalWorkingDays++;
     const iso = `${year}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    if (holidaySet.has(iso)) continue;
+    totalWorkingDays++;
     if (iso <= todayStr) workingDaysElapsed++;
   }
   const WORKING_DAYS = totalWorkingDays || 22;
