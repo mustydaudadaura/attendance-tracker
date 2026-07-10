@@ -7,10 +7,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, FileDown } from "lucide-react";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
+import { downloadCsv, buildPdf, savePdf } from "@/lib/exports";
+
+// Return ISO Monday of the week containing d (yyyy-mm-dd)
+function isoMondayOf(dateIso: string) {
+  const d = new Date(dateIso + "T00:00:00");
+  const dow = d.getDay(); // 0=Sun..6=Sat
+  const diff = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+function addDaysIso(iso: string, days: number) {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 export const Route = createFileRoute("/_authenticated/staff/$staffId")({
   component: StaffHistoryPage,
