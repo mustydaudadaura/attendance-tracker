@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, Wallet, LogOut, MonitorSmartphone, CalendarOff, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, LogOut, MonitorSmartphone, CalendarOff, Settings, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -28,6 +28,7 @@ function AdminLayout() {
     { to: "/staff", label: "Staff", icon: Users },
     { to: "/payroll", label: "Payroll", icon: Wallet },
     { to: "/holidays", label: "Holidays", icon: CalendarOff },
+    { to: "/geofence-audit", label: "Geofence audit", icon: ShieldAlert },
     { to: "/settings", label: "Settings", icon: Settings },
   ] as const;
 

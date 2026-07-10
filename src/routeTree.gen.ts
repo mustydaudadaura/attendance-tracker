@@ -16,6 +16,7 @@ import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
 import { Route as AuthenticatedHolidaysRouteImport } from './routes/_authenticated/holidays'
+import { Route as AuthenticatedGeofenceAuditRouteImport } from './routes/_authenticated/geofence-audit'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedStaffStaffIdRouteImport } from './routes/_authenticated/staff.$staffId'
 
@@ -53,6 +54,12 @@ const AuthenticatedHolidaysRoute = AuthenticatedHolidaysRouteImport.update({
   path: '/holidays',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGeofenceAuditRoute =
+  AuthenticatedGeofenceAuditRouteImport.update({
+    id: '/geofence-audit',
+    path: '/geofence-audit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/geofence-audit': typeof AuthenticatedGeofenceAuditRoute
   '/holidays': typeof AuthenticatedHolidaysRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -79,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/geofence-audit': typeof AuthenticatedGeofenceAuditRoute
   '/holidays': typeof AuthenticatedHolidaysRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -91,6 +100,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/geofence-audit': typeof AuthenticatedGeofenceAuditRoute
   '/_authenticated/holidays': typeof AuthenticatedHolidaysRoute
   '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/geofence-audit'
     | '/holidays'
     | '/payroll'
     | '/settings'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/geofence-audit'
     | '/holidays'
     | '/payroll'
     | '/settings'
@@ -124,6 +136,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/geofence-audit'
     | '/_authenticated/holidays'
     | '/_authenticated/payroll'
     | '/_authenticated/settings'
@@ -188,6 +201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHolidaysRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/geofence-audit': {
+      id: '/_authenticated/geofence-audit'
+      path: '/geofence-audit'
+      fullPath: '/geofence-audit'
+      preLoaderRoute: typeof AuthenticatedGeofenceAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -218,6 +238,7 @@ const AuthenticatedStaffRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedGeofenceAuditRoute: typeof AuthenticatedGeofenceAuditRoute
   AuthenticatedHolidaysRoute: typeof AuthenticatedHolidaysRoute
   AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -226,6 +247,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedGeofenceAuditRoute: AuthenticatedGeofenceAuditRoute,
   AuthenticatedHolidaysRoute: AuthenticatedHolidaysRoute,
   AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
