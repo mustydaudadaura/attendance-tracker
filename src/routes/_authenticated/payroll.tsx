@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { FileDown, FileText } from "lucide-react";
+import { downloadCsv, buildPdf, savePdf } from "@/lib/exports";
 
 export const Route = createFileRoute("/_authenticated/payroll")({ component: Payroll });
 
