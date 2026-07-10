@@ -284,10 +284,29 @@ function Kiosk() {
             </div>
           )}
 
+          {!isClosed && geofenceEnabled && (
+            <div className={cn(
+              "mt-6 rounded-lg border-2 p-3 text-center text-sm",
+              onSite === true && "border-success/50 bg-success/10 text-success",
+              onSite === false && "border-destructive/50 bg-destructive/10 text-destructive",
+              onSite === null && "border-muted bg-muted/40 text-muted-foreground",
+            )}>
+              {onSite === true && (
+                <p><strong>On-site at {site!.site_label}</strong> · {Math.round(distanceM!)}m from center (allowed: {site!.radius_meters}m)</p>
+              )}
+              {onSite === false && (
+                <p><strong>Off-site.</strong> You are {Math.round(distanceM!)}m from {site!.site_label}. Move within {site!.radius_meters}m to clock in.</p>
+              )}
+              {onSite === null && (
+                <p>Waiting for location to verify you are within {site!.radius_meters}m of {site!.site_label}…</p>
+              )}
+            </div>
+          )}
+
           <div className="mt-6 grid grid-cols-2 gap-3">
             <Button
               className="h-14 text-base bg-success text-success-foreground hover:bg-success/90"
-              disabled={pin.length !== 4 || busy || isClosed}
+              disabled={pin.length !== 4 || busy || isClosed || geofenceBlocks}
               onClick={() => submit("in")}
             >
               <LogIn className="mr-2 h-5 w-5" /> {busy ? "…" : "Sign In"}
@@ -295,7 +314,7 @@ function Kiosk() {
             <Button
               variant="destructive"
               className="h-14 text-base"
-              disabled={pin.length !== 4 || busy || isClosed}
+              disabled={pin.length !== 4 || busy || isClosed || geofenceBlocks}
               onClick={() => submit("out")}
             >
               <LogOut className="mr-2 h-5 w-5" /> {busy ? "…" : "Sign Out"}
