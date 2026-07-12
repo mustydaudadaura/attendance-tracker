@@ -2,6 +2,17 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* Hide the "Edit with Lovable" badge on published deployments */
+#lovable-badge,
+[id^="lovable-badge"],
+a[href*="lovable.dev"][href*="?utm"],
+a[href*="lovable.app"][target="_blank"][rel*="noopener"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
