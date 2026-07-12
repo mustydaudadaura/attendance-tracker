@@ -96,6 +96,7 @@ function StaffPage() {
                           <History className="mr-1 h-4 w-4" /> History
                         </Link>
                       </Button>
+                      <DownloadSummaryMenu staff={s} />
                       <StaffDialog existing={s} trigger={<Button size="sm" variant="outline"><Pencil className="h-4 w-4" /></Button>} />
                       <Button size="sm" variant="outline" onClick={() => { if (confirm(`Delete ${s.full_name}?`)) del.mutate(s.id); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
