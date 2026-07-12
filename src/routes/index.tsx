@@ -30,19 +30,11 @@ type PunchResult = {
 };
 
 type Fix = { lat: number; lng: number; address?: string; at: number };
-type SiteSettings = { site_lat: number | null; site_lng: number | null; radius_meters: number; site_label: string };
 
 const FIX_KEY = "kiosk_last_fix";
 const FIX_MAX_AGE_MS = 30 * 60_000; // treat cached fix as usable for 30 minutes
 
-function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const R = 6371000;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+
 
 function loadStoredFix(): Fix | null {
   if (typeof window === "undefined") return null;
@@ -200,37 +192,51 @@ function Kiosk() {
   const lagosWeekday = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Lagos", weekday: "long" }).format(now);
   const isWeekend = lagosWeekday === "Saturday" || lagosWeekday === "Sunday";
   const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
-  const { data: holiday } = useQuery({
+  const { data: holidayLabel } = useQuery({
     queryKey: ["holiday", todayIso],
     queryFn: async () => {
-      const { data } = await supabase.from("holidays").select("label").eq("work_date", todayIso).maybeSingle();
-      return data as { label: string } | null;
+      const { data, error } = await supabase.rpc("get_todays_holiday");
+      if (error) throw error;
+      return (data ?? null) as string | null;
     },
     refetchInterval: 5 * 60_000,
   });
-  const isHoliday = !!holiday;
+  const isHoliday = !!holidayLabel;
   const isClosed = isWeekend || isHoliday;
-  const closedTitle = isHoliday ? `Holiday — ${holiday!.label}` : `Kiosk closed — ${lagosWeekday}`;
+  const closedTitle = isHoliday ? `Holiday — ${holidayLabel}` : `Kiosk closed — ${lagosWeekday}`;
   const closedMsg = isHoliday
     ? "Sign-in and sign-out are disabled today. Enjoy the holiday!"
     : "Sign-in and sign-out are disabled on Saturdays and Sundays. Please clock in on the next working day (Monday).";
 
-  const { data: site } = useQuery({
-    queryKey: ["site_settings"],
+  const currentFix = fixRef.current;
+
+  // Fetch geofence status (radius/label + optionally computed distance) via a
+  // SECURITY DEFINER RPC that never leaks the site's exact coordinates.
+  const { data: siteInfo } = useQuery({
+    queryKey: ["site_info", currentFix?.lat ?? null, currentFix?.lng ?? null],
     queryFn: async () => {
-      const { data } = await supabase.from("site_settings")
-        .select("site_lat, site_lng, radius_meters, site_label").eq("id", true).maybeSingle();
-      return (data ?? null) as SiteSettings | null;
+      const { data, error } = await supabase.rpc("get_kiosk_site_info", {
+        p_lat: currentFix?.lat ?? undefined,
+        p_lng: currentFix?.lng ?? undefined,
+      });
+      if (error) throw error;
+      return data as {
+        enabled: boolean;
+        radius_meters?: number;
+        site_label?: string;
+        distance_m?: number;
+        on_site?: boolean;
+      };
     },
     refetchInterval: 5 * 60_000,
   });
 
-  const geofenceEnabled = !!(site && site.site_lat != null && site.site_lng != null);
-  const currentFix = fixRef.current;
-  const distanceM = geofenceEnabled && currentFix
-    ? distanceMeters(currentFix.lat, currentFix.lng, site!.site_lat!, site!.site_lng!)
+  const geofenceEnabled = !!siteInfo?.enabled;
+  const distanceM = typeof siteInfo?.distance_m === "number" ? siteInfo.distance_m : null;
+  const onSite = typeof siteInfo?.on_site === "boolean" ? siteInfo.on_site : null;
+  const site = geofenceEnabled
+    ? { radius_meters: siteInfo!.radius_meters ?? 150, site_label: siteInfo!.site_label ?? "site" }
     : null;
-  const onSite = distanceM != null ? distanceM <= site!.radius_meters : null;
   const geofenceBlocks = geofenceEnabled && (onSite === false || (onSite === null && (geoStatus === "denied" || geoStatus === "blocked" || geoStatus === "unsupported")));
 
   return (
