@@ -113,6 +113,39 @@ function StaffPage() {
   );
 }
 
+function DownloadSummaryMenu({ staff }: { staff: Staff }) {
+  const [busy, setBusy] = useState<null | "week" | "month">(null);
+  async function run(kind: "week" | "month") {
+    try {
+      setBusy(kind);
+      if (kind === "week") await downloadWeekSummary(staff, isoMondayOf());
+      else await downloadMonthSummary(staff, currentMonthIsoLagos());
+      toast.success(`Downloaded ${kind}ly summary`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to build PDF");
+    } finally { setBusy(null); }
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="sm" variant="outline" title="Download summary" aria-label={`Download summary for ${staff.full_name}`}>
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowDownToLine className="h-4 w-4" />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Download PDF for {staff.full_name}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={busy !== null} onSelect={(e) => { e.preventDefault(); run("week"); }}>
+          This week (Mon–Fri)
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={busy !== null} onSelect={(e) => { e.preventDefault(); run("month"); }}>
+          This month
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function StaffDialog({ existing, trigger }: { existing?: Staff; trigger: React.ReactNode }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
