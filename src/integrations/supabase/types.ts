@@ -255,6 +255,11 @@ export type Database = {
           status: string
         }[]
       }
+      get_kiosk_site_info: {
+        Args: { p_lat?: number; p_lng?: number }
+        Returns: Json
+      }
+      get_todays_holiday: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
