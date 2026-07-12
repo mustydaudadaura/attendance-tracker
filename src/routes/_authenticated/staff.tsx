@@ -13,8 +13,14 @@ import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Pencil, History } from "lucide-react";
+import { Plus, Trash2, Pencil, History, ArrowDownToLine, Loader2 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import {
+  downloadWeekSummary, downloadMonthSummary, isoMondayOf, currentMonthIsoLagos,
+} from "@/lib/staff-summary";
 
 export const Route = createFileRoute("/_authenticated/staff")({ component: StaffPage });
 
@@ -90,6 +96,7 @@ function StaffPage() {
                           <History className="mr-1 h-4 w-4" /> History
                         </Link>
                       </Button>
+                      <DownloadSummaryMenu staff={s} />
                       <StaffDialog existing={s} trigger={<Button size="sm" variant="outline"><Pencil className="h-4 w-4" /></Button>} />
                       <Button size="sm" variant="outline" onClick={() => { if (confirm(`Delete ${s.full_name}?`)) del.mutate(s.id); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -103,6 +110,39 @@ function StaffPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+function DownloadSummaryMenu({ staff }: { staff: Staff }) {
+  const [busy, setBusy] = useState<null | "week" | "month">(null);
+  async function run(kind: "week" | "month") {
+    try {
+      setBusy(kind);
+      if (kind === "week") await downloadWeekSummary(staff, isoMondayOf());
+      else await downloadMonthSummary(staff, currentMonthIsoLagos());
+      toast.success(`Downloaded ${kind}ly summary`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to build PDF");
+    } finally { setBusy(null); }
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="sm" variant="outline" title="Download summary" aria-label={`Download summary for ${staff.full_name}`}>
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowDownToLine className="h-4 w-4" />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Download PDF for {staff.full_name}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={busy !== null} onSelect={(e) => { e.preventDefault(); run("week"); }}>
+          This week (Mon–Fri)
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={busy !== null} onSelect={(e) => { e.preventDefault(); run("month"); }}>
+          This month
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
