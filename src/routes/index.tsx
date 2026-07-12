@@ -30,19 +30,8 @@ type PunchResult = {
 };
 
 type Fix = { lat: number; lng: number; address?: string; at: number };
-type SiteSettings = { site_lat: number | null; site_lng: number | null; radius_meters: number; site_label: string };
 
-const FIX_KEY = "kiosk_last_fix";
-const FIX_MAX_AGE_MS = 30 * 60_000; // treat cached fix as usable for 30 minutes
 
-function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const R = 6371000;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
 
 function loadStoredFix(): Fix | null {
   if (typeof window === "undefined") return null;
