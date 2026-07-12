@@ -224,8 +224,8 @@ function Kiosk() {
     queryKey: ["site_info", currentFix?.lat ?? null, currentFix?.lng ?? null],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_kiosk_site_info", {
-        p_lat: currentFix?.lat ?? null,
-        p_lng: currentFix?.lng ?? null,
+        p_lat: currentFix?.lat ?? undefined,
+        p_lng: currentFix?.lng ?? undefined,
       });
       if (error) throw error;
       return data as {
