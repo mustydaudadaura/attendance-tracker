@@ -31,6 +31,9 @@ type PunchResult = {
 
 type Fix = { lat: number; lng: number; address?: string; at: number };
 
+const FIX_KEY = "kiosk_last_fix";
+const FIX_MAX_AGE_MS = 30 * 60_000; // treat cached fix as usable for 30 minutes
+
 
 
 function loadStoredFix(): Fix | null {
