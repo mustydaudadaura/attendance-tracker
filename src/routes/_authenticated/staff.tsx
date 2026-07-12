@@ -13,8 +13,14 @@ import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Pencil, History } from "lucide-react";
+import { Plus, Trash2, Pencil, History, ArrowDownToLine, Loader2 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import {
+  downloadWeekSummary, downloadMonthSummary, isoMondayOf, currentMonthIsoLagos,
+} from "@/lib/staff-summary";
 
 export const Route = createFileRoute("/_authenticated/staff")({ component: StaffPage });
 
