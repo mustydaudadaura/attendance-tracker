@@ -189,6 +189,39 @@ export type Database = {
         }
         Relationships: []
       }
+      sites: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          radius_meters: number
+          site_label: string
+          site_lat: number
+          site_lng: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          radius_meters?: number
+          site_label: string
+          site_lat: number
+          site_lng: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          radius_meters?: number
+          site_label?: string
+          site_lat?: number
+          site_lng?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       staff: {
         Row: {
           active: boolean
