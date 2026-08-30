@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
+import { AcademyBrand } from "@/components/academy-brand";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
 
@@ -58,7 +59,7 @@ function AuthPage() {
           <ArrowLeft className="h-4 w-4" /> Back to kiosk
         </Link>
         <Card className="p-8">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Assalam Tahfizul Qur'an Academy</p>
+          <AcademyBrand />
           <h1 className="mt-1 text-2xl font-bold">Admin {mode === "signin" ? "Sign In" : "Setup"}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "signin"

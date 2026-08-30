@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Delete, LogIn, LogOut, MapPin, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AcademyBrand } from "@/components/academy-brand";
 
 export const Route = createFileRoute("/")({
   component: Kiosk,
@@ -243,9 +244,11 @@ function Kiosk() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b bg-primary text-primary-foreground">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-xs uppercase tracking-widest opacity-80">Assalam Tahfizul Qur'an Academy Ltd</p>
-            <h1 className="text-lg font-semibold">Staff Attendance Kiosk</h1>
+          <div className="flex items-center gap-4">
+            <AcademyBrand compact light />
+            <div className="hidden border-l border-primary-foreground/25 pl-4 sm:block">
+              <h1 className="text-lg font-semibold">Staff Attendance Kiosk</h1>
+            </div>
           </div>
           <Link to="/auth" className="inline-flex items-center gap-2 rounded-md border border-primary-foreground/30 px-3 py-2 text-sm hover:bg-primary-foreground/10">
             <ShieldCheck className="h-4 w-4" /> Admin
