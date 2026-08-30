@@ -24,14 +24,14 @@ export function AcademyBrand({
           "truncate text-[0.68rem] font-semibold uppercase tracking-[0.18em]",
           light ? "text-primary-foreground/80" : "text-primary",
         )}>
-          Talented Stars Intl Schools
+          Staff Attendance & Payroll
         </p>
         <p className={cn(
           "truncate font-display text-lg leading-tight",
           compact && "text-base",
           light ? "text-primary-foreground" : "text-foreground",
         )}>
-          Assalam Tahfizul Qur&apos;an Academy
+          Talented Stars Intl Schools
         </p>
       </div>
     </div>
