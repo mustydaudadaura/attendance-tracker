@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Users, Wallet, LogOut, MonitorSmartphone, CalendarOff, Settings, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AcademyBrand } from "@/components/academy-brand";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -36,9 +37,11 @@ function AdminLayout() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b bg-primary text-primary-foreground">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-xs uppercase tracking-widest opacity-80">Assalam Tahfizul Qur'an Academy Ltd</p>
-            <h1 className="text-lg font-semibold">Admin Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <AcademyBrand compact light />
+            <div className="hidden border-l border-primary-foreground/25 pl-4 sm:block">
+              <h1 className="text-lg font-semibold">Admin Dashboard</h1>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/" className="inline-flex items-center gap-2 rounded-md border border-primary-foreground/30 px-3 py-2 text-sm hover:bg-primary-foreground/10">
