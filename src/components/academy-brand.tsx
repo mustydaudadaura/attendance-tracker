@@ -1,4 +1,4 @@
-import emblemAsset from "@/assets/academy-emblem.jpg.asset.json";
+import emblemAsset from "@/assets/assalam-emblem.png.asset.json";
 import { cn } from "@/lib/utils";
 
 export function AcademyBrand({
@@ -12,7 +12,7 @@ export function AcademyBrand({
     <div className={cn("flex items-center gap-3", compact && "gap-2")}>
       <img
         src={emblemAsset.url}
-        alt="Talented Stars International Schools emblem"
+        alt="Assalam Tahfizul Qur'an Academy emblem"
         className={cn(
           "h-14 w-14 shrink-0 rounded-full border-2 object-cover shadow-sm",
           compact && "h-10 w-10",
@@ -31,7 +31,7 @@ export function AcademyBrand({
           compact && "text-base",
           light ? "text-primary-foreground" : "text-foreground",
         )}>
-          Talented Stars Intl Schools
+          Assalam Tahfizul Qur&apos;an Academy Limited
         </p>
       </div>
     </div>

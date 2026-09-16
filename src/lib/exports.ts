@@ -33,7 +33,7 @@ export function buildPdf(opts: {
   let y = 40;
 
   doc.setFont("helvetica", "bold").setFontSize(16);
-  doc.text("Talented Stars International Schools", 40, y);
+  doc.text("Assalam Tahfizul Qur'an Academy Limited", 40, y);
   y += 18;
   doc.setFontSize(13).setTextColor(40);
   doc.text(opts.title, 40, y);

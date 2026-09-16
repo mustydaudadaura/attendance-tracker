@@ -172,7 +172,7 @@ export async function downloadWeekSummary(staff: Staff, weekStartIso: string) {
         d.naira > 0 ? Math.round(d.naira).toLocaleString() : "—",
       ]),
     }],
-    footer: "Confidential payroll record — Talented Stars International Schools",
+    footer: "Confidential payroll record — Assalam Tahfizul Qur'an Academy Limited",
   });
   savePdf(doc, `${staff.full_name.replace(/\s+/g, "_")}_week_${startIso}.pdf`);
 }
@@ -217,7 +217,7 @@ export async function downloadMonthSummary(staff: Staff, monthIso: string /* yyy
         d.naira > 0 ? Math.round(d.naira).toLocaleString() : "—",
       ]),
     }],
-    footer: "Confidential payroll record — Talented Stars International Schools",
+    footer: "Confidential payroll record — Assalam Tahfizul Qur'an Academy Limited",
   });
   savePdf(doc, `${staff.full_name.replace(/\s+/g, "_")}_${monthIso}.pdf`);
 }

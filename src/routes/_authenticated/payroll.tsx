@@ -127,7 +127,7 @@ function Payroll() {
           Math.round(r.netPay).toLocaleString(),
         ]),
       }],
-      footer: "Confidential payroll record — Talented Stars International Schools",
+      footer: "Confidential payroll record — Assalam Tahfizul Qur'an Academy Limited",
     });
     savePdf(doc, `payroll-${month}.pdf`);
   }
