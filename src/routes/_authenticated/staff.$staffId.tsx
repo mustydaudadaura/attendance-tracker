@@ -76,11 +76,34 @@ function fmtDate(d: string) {
   });
 }
 
+function monthBounds(dateIso: string) {
+  const [year, month] = dateIso.split("-").map(Number);
+  const next = new Date(year, month, 1);
+  return {
+    start: `${year}-${String(month).padStart(2, "0")}-01`,
+    end: `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-01`,
+  };
+}
+
+function workingDaysInMonth(dateIso: string, holidays: Set<string>) {
+  const [year, month] = dateIso.split("-").map(Number);
+  let count = 0;
+  for (let day = 1; day <= new Date(year, month, 0).getDate(); day++) {
+    const date = new Date(year, month - 1, day);
+    const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    if (date.getDay() !== 0 && date.getDay() !== 6 && !holidays.has(iso)) count++;
+  }
+  return count || 22;
+}
+
 function StaffHistoryPage() {
   const { staffId } = useParams({ from: "/_authenticated/staff/$staffId" });
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
   const [weekStart, setWeekStart] = useState<string>(isoMondayOf(defaultTo));
+  const weekEnd = addDaysIso(weekStart, 4);
+  const holidayStart = [monthBounds(from).start, monthBounds(weekStart).start].sort()[0];
+  const holidayEnd = [monthBounds(to).end, monthBounds(weekEnd).end].sort().at(-1) ?? monthBounds(to).end;
 
   const { data: staff } = useQuery({
     queryKey: ["staff", staffId],
@@ -107,13 +130,13 @@ function StaffHistoryPage() {
   });
 
   const { data: holidayRows = [] } = useQuery({
-    queryKey: ["holidays", from, to],
+    queryKey: ["holidays", holidayStart, holidayEnd],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("holidays")
         .select("work_date")
-        .gte("work_date", from)
-        .lte("work_date", to);
+        .gte("work_date", holidayStart)
+        .lt("work_date", holidayEnd);
       if (error) throw error;
       return data as { work_date: string }[];
     },
@@ -123,9 +146,9 @@ function StaffHistoryPage() {
   const MISSED_OUT_PCT = 20;
   const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
-  // Working days in the selected range = Mon–Fri minus holidays
-  let workingDaysInRange = 0;
+  // Every deduction uses that date's monthly daily pay: salary / actual month working days.
   let workingDaysElapsed = 0;
+  let absentNaira = 0;
   if (from && to) {
     const start = new Date(from + "T00:00:00");
     const end = new Date(to + "T00:00:00");
@@ -134,22 +157,27 @@ function StaffHistoryPage() {
       if (dow === 0 || dow === 6) continue;
       const iso = dt.toISOString().slice(0, 10);
       if (holidaySet.has(iso)) continue;
-      workingDaysInRange++;
-      if (iso <= todayIso) workingDaysElapsed++;
+      if (iso <= todayIso) {
+        workingDaysElapsed++;
+        if (!rows.some((row) => row.work_date === iso && row.clock_in)) {
+          absentNaira += Number(staff?.base_salary ?? 0) / workingDaysInMonth(iso, holidaySet);
+        }
+      }
     }
   }
-  const WORKING_DAYS = workingDaysInRange || 22;
-
-  const dailyPay = Number(staff?.base_salary ?? 0) / WORKING_DAYS;
-  const rowDeductionNaira = (r: Attendance) => (dailyPay * Number(r.deduction_amount || 0)) / 100;
+  const selectedMonthWorkingDays = workingDaysInMonth(from, holidaySet);
+  const selectedMonthDailyPay = Number(staff?.base_salary ?? 0) / selectedMonthWorkingDays;
+  const dailyPayForDate = (dateIso: string) => Number(staff?.base_salary ?? 0) / workingDaysInMonth(dateIso, holidaySet);
+  const rowDeductionNaira = (r: Attendance) => (dailyPayForDate(r.work_date) * Number(r.deduction_amount || 0)) / 100;
   const latePct = rows.reduce((sum, r) => sum + Number(r.deduction_amount || 0), 0);
   const missedOutDays = rows.filter((r) => r.clock_in && !r.clock_out && r.work_date < todayIso).length;
   const missedOutPct = missedOutDays * MISSED_OUT_PCT;
-  const missedOutNaira = (dailyPay * missedOutPct) / 100;
+  const missedOutNaira = rows
+    .filter((r) => r.clock_in && !r.clock_out && r.work_date < todayIso)
+    .reduce((sum, r) => sum + (dailyPayForDate(r.work_date) * MISSED_OUT_PCT) / 100, 0);
   const presentDays = rows.filter((r) => r.clock_in).length;
   const absentDays = Math.max(0, workingDaysElapsed - presentDays);
   const absentPct = absentDays * 100;
-  const absentNaira = (dailyPay * absentPct) / 100;
   const totalDeductionPct = latePct + missedOutPct + absentPct;
   const lateNaira = rows.reduce((sum, r) => sum + rowDeductionNaira(r), 0);
   const totalDeduction = Math.min(Number(staff?.base_salary ?? 0), lateNaira + missedOutNaira + absentNaira);
@@ -166,8 +194,7 @@ function StaffHistoryPage() {
   ];
 
   // Weekly summary (Mon–Fri of selected week)
-  const weekEnd = addDaysIso(weekStart, 6);
-  const weekDailyPay = Number(staff?.base_salary ?? 0) / 5; // 5 weekday base
+  const weekLabelEnd = addDaysIso(weekStart, 4);
   const weekRows: Array<{ date: string; label: string; clock_in: string | null; clock_out: string | null; status: string; late_min: number; deduction_pct: number; naira: number }> = [];
   let weekTotalPct = 0;
   let weekTotalNaira = 0;
@@ -194,7 +221,7 @@ function StaffHistoryPage() {
       status = "Late";
       pct = Number(rec.deduction_amount || 0);
     }
-    const naira = (weekDailyPay * pct) / 100;
+    const naira = (dailyPayForDate(iso) * pct) / 100;
     weekTotalPct += pct;
     weekTotalNaira += naira;
     weekRows.push({
@@ -208,7 +235,7 @@ function StaffHistoryPage() {
       naira,
     });
   }
-  const weekLabel = `Week of ${new Date(weekStart + "T00:00:00").toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })} to ${new Date(weekEnd + "T00:00:00").toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })}`;
+  const weekLabel = `Week of ${new Date(weekStart + "T00:00:00").toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })} to ${new Date(weekLabelEnd + "T00:00:00").toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })}`;
 
   function weeklyHeaders() {
     return ["Date", "Clock in", "Clock out", "Status", "Late min", "Deduction %", "Deduction ₦"];
@@ -235,7 +262,7 @@ function StaffHistoryPage() {
         { label: "Department", value: String(staff?.department ?? "") },
         { label: "PIN", value: String(staff?.pin ?? "") },
         { label: "Base salary", value: `₦${Number(staff?.base_salary ?? 0).toLocaleString()}` },
-        { label: "Daily pay (Mon–Fri)", value: `₦${Math.round(weekDailyPay).toLocaleString()}` },
+        { label: "Daily pay", value: `₦${Math.round(dailyPayForDate(weekStart)).toLocaleString()} (${workingDaysInMonth(weekStart, holidaySet)} working days in month)` },
         { label: "Total deduction %", value: `${weekTotalPct}%` },
         { label: "Total deduction ₦", value: `₦${Math.round(weekTotalNaira).toLocaleString()}` },
       ],
@@ -305,12 +332,12 @@ function StaffHistoryPage() {
           <div className="rounded-lg border p-4">
             <p className="text-xs uppercase text-muted-foreground">Absent ({absentDays} day{absentDays === 1 ? "" : "s"})</p>
             <p className="mt-1 text-xl font-bold text-destructive">{absentPct}%</p>
-            <p className="text-xs text-muted-foreground">− ₦{Math.round(absentNaira).toLocaleString()} · 100% each · {WORKING_DAYS} working day{WORKING_DAYS === 1 ? "" : "s"} in range</p>
+            <p className="text-xs text-muted-foreground">− ₦{Math.round(absentNaira).toLocaleString()} · 100% of each absent day</p>
           </div>
           <div className="rounded-lg border p-4 bg-muted/30">
             <p className="text-xs uppercase text-muted-foreground">Total (range)</p>
             <p className="mt-1 text-xl font-bold text-destructive">{totalDeductionPct}%</p>
-            <p className="text-xs text-muted-foreground">− ₦{Math.round(totalDeduction).toLocaleString()} · Daily pay ₦{Math.round(dailyPay).toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">− ₦{Math.round(totalDeduction).toLocaleString()} · Daily pay ₦{Math.round(selectedMonthDailyPay).toLocaleString()} ({selectedMonthWorkingDays} working days)</p>
           </div>
         </div>
       </Card>

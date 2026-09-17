@@ -137,7 +137,7 @@ function Payroll() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Payroll</h2>
-          <p className="text-sm text-muted-foreground">Work week: Monday–Friday, holidays excluded ({WORKING_DAYS} working days this month). Late (after 7:45am) or early sign-out = 5% of daily pay per 5 minutes. Missed sign-out = 20% penalty. Absent weekday (no sign-in) = 100%.</p>
+          <p className="text-sm text-muted-foreground">Work week: Monday–Friday, holidays excluded ({WORKING_DAYS} working days this month). Each completed 5 minutes late (after 7:45am) or early at sign-out = 5% of that staff member’s daily pay. Missed sign-out = 20%. Absent weekday = 100% of one day.</p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <div>
