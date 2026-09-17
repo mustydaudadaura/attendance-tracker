@@ -129,6 +129,21 @@ function StaffHistoryPage() {
     },
   });
 
+  const { data: weeklyAttendance = [] } = useQuery({
+    queryKey: ["attendance-week", staffId, weekStart],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance")
+        .select("*")
+        .eq("staff_id", staffId)
+        .gte("work_date", weekStart)
+        .lte("work_date", weekEnd)
+        .order("work_date", { ascending: true });
+      if (error) throw error;
+      return data as Attendance[];
+    },
+  });
+
   const { data: holidayRows = [] } = useQuery({
     queryKey: ["holidays", holidayStart, holidayEnd],
     queryFn: async () => {
@@ -201,7 +216,7 @@ function StaffHistoryPage() {
   for (let i = 0; i < 5; i++) {
     const iso = addDaysIso(weekStart, i);
     const isHoliday = holidaySet.has(iso);
-    const rec = rows.find((r) => r.work_date === iso);
+    const rec = weeklyAttendance.find((r) => r.work_date === iso);
     let pct = 0;
     let status = "—";
     if (isHoliday) {
