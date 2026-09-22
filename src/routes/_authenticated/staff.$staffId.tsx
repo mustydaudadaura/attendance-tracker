@@ -337,7 +337,7 @@ function StaffHistoryPage() {
           <div className="rounded-lg border p-4">
             <p className="text-xs uppercase text-muted-foreground">Late / early-out</p>
             <p className="mt-1 text-xl font-bold text-destructive">{latePct}%</p>
-            <p className="text-xs text-muted-foreground">− ₦{Math.round(lateNaira).toLocaleString()} · 5% per 5 min</p>
+            <p className="text-xs text-muted-foreground">− ₦{Math.round(lateNaira).toLocaleString()} · 20% per 5 min</p>
           </div>
           <div className="rounded-lg border p-4">
             <p className="text-xs uppercase text-muted-foreground">Missed clock-out</p>
