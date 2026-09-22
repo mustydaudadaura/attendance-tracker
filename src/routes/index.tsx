@@ -501,13 +501,13 @@ function PenaltyBoard() {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <DayCard title="Today" dateStr={today} rows={todayQ.data ?? []} loading={todayQ.isLoading} />
-      <DayCard title="Yesterday" dateStr={yesterday} rows={yestQ.data ?? []} loading={yestQ.isLoading} />
+      <DayCard title="Today" dateStr={today} rows={todayQ.data ?? []} loading={todayQ.isLoading} error={todayQ.error} />
+      <DayCard title="Yesterday" dateStr={yesterday} rows={yestQ.data ?? []} loading={yestQ.isLoading} error={yestQ.error} />
     </div>
   );
 }
 
-function DayCard({ title, dateStr, rows, loading }: { title: string; dateStr: string; rows: SummaryRow[]; loading: boolean }) {
+function DayCard({ title, dateStr, rows, loading, error }: { title: string; dateStr: string; rows: SummaryRow[]; loading: boolean; error: unknown }) {
   const pretty = new Date(dateStr + "T00:00:00").toLocaleDateString("en-NG", {
     weekday: "short", day: "numeric", month: "short",
   });
@@ -553,10 +553,13 @@ function DayCard({ title, dateStr, rows, loading }: { title: string; dateStr: st
             {loading && (
               <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">Loading…</td></tr>
             )}
-            {!loading && rows.length === 0 && (
+            {!loading && error && (
+              <tr><td colSpan={4} className="px-3 py-4 text-center text-destructive">Summary unavailable. Please try again shortly.</td></tr>
+            )}
+            {!loading && !error && rows.length === 0 && (
               <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">No staff.</td></tr>
             )}
-            {rows.map((r) => (
+            {!error && rows.map((r) => (
               <tr key={r.staff_id} className="border-t">
                 <td className="px-3 py-2 font-medium">{r.full_name}</td>
                 <td className="px-3 py-2"><StatusBadge status={r.status} /></td>
