@@ -1,11 +1,11 @@
 {
-  "version": 1,
   "asset_id": "9d51f9b3-c40b-45db-9918-c1ec3d7d08d2",
-  "project_id": "bb114ec4-bb8a-4889-b20b-9fd66b5b0151",
-  "url": "/__l5e/assets-v1/9d51f9b3-c40b-45db-9918-c1ec3d7d08d2/assalam-emblem.png",
-  "r2_key": "a/v1/bb114ec4-bb8a-4889-b20b-9fd66b5b0151/9d51f9b3-c40b-45db-9918-c1ec3d7d08d2/assalam-emblem.png",
-  "original_filename": "assalam-emblem.png",
-  "size": 1559532,
   "content_type": "image/png",
-  "created_at": "2026-09-16T20:39:51Z"
+  "created_at": "2026-09-16T20:39:51Z",
+  "original_filename": "assalam-emblem.png",
+  "project_id": "2d78bb47-b9f2-467e-bc8c-db7cd837f468",
+  "r2_key": "a/v1/2d78bb47-b9f2-467e-bc8c-db7cd837f468/9d51f9b3-c40b-45db-9918-c1ec3d7d08d2/assalam-emblem.png",
+  "size": 1559532,
+  "url": "/__l5e/assets-v1/9d51f9b3-c40b-45db-9918-c1ec3d7d08d2/assalam-emblem.png",
+  "version": 1
 }
