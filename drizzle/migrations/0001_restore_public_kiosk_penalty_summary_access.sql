@@ -1,1 +1,0 @@
-GRANT EXECUTE ON FUNCTION public.daily_penalty_summary(date) TO anon, authenticated;
