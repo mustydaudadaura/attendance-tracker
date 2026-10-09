@@ -507,7 +507,7 @@ function PenaltyBoard() {
   );
 }
 
-function DayCard({ title, dateStr, rows, loading, error }: { title: string; dateStr: string; rows: SummaryRow[]; loading: boolean; error: unknown }) {
+function DayCard({ title, dateStr, rows, loading, error }: { title: string; dateStr: string; rows: SummaryRow[]; loading: boolean; error: Error | null }) {
   const pretty = new Date(dateStr + "T00:00:00").toLocaleDateString("en-NG", {
     weekday: "short", day: "numeric", month: "short",
   });
