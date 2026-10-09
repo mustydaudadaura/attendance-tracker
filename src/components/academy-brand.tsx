@@ -1,5 +1,5 @@
-import emblemAsset from "@/assets/assalam-emblem.png.asset.json";
 import { cn } from "@/lib/utils";
+import { GraduationCap } from "lucide-react";
 
 export function AcademyBrand({
   compact = false,
@@ -9,29 +9,36 @@ export function AcademyBrand({
   light?: boolean;
 }) {
   return (
-    <div className={cn("flex items-center gap-3", compact && "gap-2")}>
-      <img
-        src={emblemAsset.url}
-        alt="Assalam Tahfizul Qur'an Academy emblem"
+    <div className={cn("flex items-center gap-3", compact && "gap-2.5")}>
+      <div
         className={cn(
-          "h-14 w-14 shrink-0 rounded-full border-2 object-cover shadow-sm",
-          compact && "h-10 w-10",
-          light ? "border-primary-foreground/60" : "border-primary/20",
+          "flex shrink-0 items-center justify-center rounded-full border-2 shadow-sm transition-transform",
+          compact ? "h-10 w-10" : "h-13 w-13",
+          light
+            ? "border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
+            : "border-primary/30 bg-primary/10 text-primary",
         )}
-      />
+        aria-label="Aljazeera International School Daura crest"
+      >
+        <GraduationCap className={cn(compact ? "h-5 w-5" : "h-7 w-7")} />
+      </div>
       <div className="min-w-0">
-        <p className={cn(
-          "truncate text-[0.68rem] font-semibold uppercase tracking-[0.18em]",
-          light ? "text-primary-foreground/80" : "text-primary",
-        )}>
-          Staff Attendance & Payroll
+        <p
+          className={cn(
+            "text-[0.68rem] font-semibold uppercase tracking-[0.18em]",
+            light ? "text-primary-foreground/80" : "text-primary",
+          )}
+        >
+          Staff Attendance &amp; Payroll
         </p>
-        <p className={cn(
-          "truncate font-display text-lg leading-tight",
-          compact && "text-base",
-          light ? "text-primary-foreground" : "text-foreground",
-        )}>
-          Assalam Tahfizul Qur&apos;an Academy Limited
+        <p
+          className={cn(
+            "font-display font-semibold leading-tight",
+            compact ? "text-base" : "text-xl",
+            light ? "text-primary-foreground" : "text-foreground",
+          )}
+        >
+          Aljazeera International School Daura
         </p>
       </div>
     </div>

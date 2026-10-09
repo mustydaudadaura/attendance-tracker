@@ -127,7 +127,7 @@ function Payroll() {
           Math.round(r.netPay).toLocaleString(),
         ]),
       }],
-      footer: "Confidential payroll record — Assalam Tahfizul Qur'an Academy Limited",
+      footer: "Confidential payroll record — Aljazeera International School Daura",
     });
     savePdf(doc, `payroll-${month}.pdf`);
   }

@@ -1,6 +1,6 @@
 # Attendance Tracker
 
-Create a website that will track Assalam Tahfizul Qur'an Academy Limited Staff attendance when they arrived the school they are to type their 4 digit pin created by the school admin only school admin will sign and have access to the dashboard to track and he will register all the staff the space should be provided to type their p8n and click clock in and out the time will automatically capture and display in green of the are not late if late it should be red and the amount to be deducted should be also display the admin sign is mustydawuddaura@gmail.com and password is Mustydawud@1994 connect the attendance with the payroll
+Create a website that will track Aljazeera International School Daura Staff attendance when they arrived the school they are to type their 4 digit pin created by the school admin only school admin will sign and have access to the dashboard to track and he will register all the staff the space should be provided to type their p8n and click clock in and out the time will automatically capture and display in green of the are not late if late it should be red and the amount to be deducted should be also display the admin sign is mustydawuddaura@gmail.com and password is Mustydawud@1994 connect the attendance with the payroll
 
 This project was built with [Lovable](https://lovable.dev).
 
